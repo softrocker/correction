@@ -63,6 +63,9 @@ void MainWindow::createActions()
 	actionFindNodesAccurately_ = new QAction(tr("&Find nodes accurately"), this);
 	actionFindNodesAccurately_->setStatusTip(tr("Find nodes accurately"));
 	connect(actionFindNodesAccurately_, &QAction::triggered, this, &MainWindow::findNodesAccurately);
+
+	actionTest_ = new QAction(tr("&Test"), this);
+	connect(actionTest_, &QAction::triggered, this, &MainWindow::test);
 }
 
 
@@ -109,6 +112,7 @@ void MainWindow::createMenu()
 	QMenu* menuOperations = menuBar()->addMenu(tr("Operations"));
 	menuOperations->addAction(actionFindNodexApprox_);
 	menuOperations->addAction(actionFindNodesAccurately_);
+	menuOperations->addAction(actionTest_);
 }
 
 void MainWindow::loadImage()
@@ -150,4 +154,9 @@ void MainWindow::setMousePos(const QPointF& pos)
 {
 	labelX->setText("x = " + QString().setNum(pos.x(), 'f', 3));
 	labelY->setText("y = " + QString().setNum(pos.y(), 'f', 3));
+}
+
+void MainWindow::test()
+{
+	imageController_->test();
 }

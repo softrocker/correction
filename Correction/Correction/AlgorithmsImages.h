@@ -12,6 +12,8 @@ namespace AlgorithmsImages
 {
 	QImage Mat2QImageGray(const cv::Mat_<uchar> &src);
 	void getLineSize(const cv::Mat& cvImage, cv::Size& size);
+	void downsample(const cv::Mat& cvImage, cv::Mat& cvImageResult);
+	void getLineSize2(const cv::Mat& cvImage, cv::Size& size);
 	void findCrosshair(const cv::Mat& cvSubImage, const cv::Point& posImage, cv::Point& crosshair);
 	void createVisualImageBlocks(const cv::Mat& cvImage, int blockWidth, int blockHeight, ImageDisplay& imageDisplay);
 	void findNodesApproximately(const cv::Mat& cvImage, NodesSet& nodesSet);
@@ -20,5 +22,5 @@ namespace AlgorithmsImages
 	void sumIntensityVertically(const cv::Mat& cvImage, std::vector<double>& sums);
 	void sumIntensityHorizontally(const cv::Mat& cvImage, std::vector<double>& sums);
 	void getNodeSubImageROI(const cv::Mat& cvImage, const cv::Size& sizeROI, const cv::Point& node, cv::Rect& ROIcorrected);
-	void generateMask(const cv::Size& sizeLine, NodeType nodeType, cv::Mat& mask);
+	void generateMask(const cv::Size& sizeImage, const cv::Size& sizeLine, NodeType nodeType, cv::Mat& mask);
 }

@@ -44,7 +44,7 @@ void ImageController::findNodesAccurately()
 	cv::Size sizeLine;
 	AlgorithmsImages::getLineSize(cvSubImage, sizeLine);*/
 
-	cv::Size sizeImage = nodesSet_.getCellSize() / 2;
+	cv::Size sizeImage = nodesSet_.getCellSize();
 
 	for (int row = 0; row < nodesSet_.rows(); row++)
 	{
@@ -55,11 +55,21 @@ void ImageController::findNodesAccurately()
 			AlgorithmsImages::getNodeSubImageROI(cvImage_, sizeImage, node, roiCorrected);
 			cv::Size sizeLine;
 			cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected);
+
+			const int c_iteration_count = 4;
+			for (int i = 0; i < c_iteration_count; i++)
+			{
+				AlgorithmsImages::downsample(cvSubImage, cvSubImage);
+			}
+
 			AlgorithmsImages::getLineSize(cvSubImage, sizeLine);
+			
 			cv::Mat mask;
 			NodeType nodeType = nodesSet_.getNodeType(row, col);
-			AlgorithmsImages::generateMask(sizeLine, nodeType, mask);
+
+			AlgorithmsImages::generateMask(sizeImage / 3, sizeLine, nodeType, mask);
 			cv::Mat corrMatrix;
+
 			cv::matchTemplate(cvSubImage, mask, corrMatrix, cv::TM_CCORR_NORMED);
 			double minVal; double maxVal; cv::Point minLoc; cv::Point maxLoc;
 			cv::minMaxLoc(corrMatrix, &minVal, &maxVal, &minLoc, &maxLoc);
@@ -82,3 +92,17 @@ QVector<QPoint> ImageController::getNodesVisual() const
 	return nodesPositions;
 }
 
+void ImageController::test()
+{
+	cv::Size sizeImage = nodesSet_.getCellSize() / 2;
+	cv::Point node = nodesSet_.center();
+	cv::Rect roiCorrected;
+	AlgorithmsImages::getNodeSubImageROI(cvImage_, sizeImage, node, roiCorrected);
+	cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected);
+	cv::Mat cvSubImageDownsampled = cvSubImage.clone();
+	const int c_iteration_count = 4;
+	for (int i = 0; i < c_iteration_count; i++)
+	{
+		AlgorithmsImages::downsample(cvSubImageDownsampled, cvSubImageDownsampled);
+	}
+}

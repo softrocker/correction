@@ -27,7 +27,10 @@ void GraphicsScene::addImageBlocks(const ImageDisplay& imageDisplay)
 
 void GraphicsScene::addNodesItems(const QVector<QPoint>& nodesPositions)
 {
-	deleteNodesItems();
+	if (!nodesItems_.empty())
+	{
+		deleteNodesItems();
+	}
 	for (int i = 0; i < nodesPositions.size(); i++)
 	{
 		QGraphicsEllipseItem* nodeItem = addEllipse(QRect(nodesPositions[i].x()-5, nodesPositions[i].y()-5, 10, 10), QPen(QColor(255, 0, 0)), QBrush(QColor(255, 0, 0)));

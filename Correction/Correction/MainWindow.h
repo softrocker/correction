@@ -30,6 +30,7 @@ private:
 	void updateImage();
 
 	void setMousePos(const QPointF& pos);
+	void test();
 private:
 
 	ImageController* imageController_;
@@ -43,6 +44,8 @@ private:
 
 	QAction* actionFindNodexApprox_;
 	QAction* actionFindNodesAccurately_;
+
+	QAction* actionTest_;
 
 	QLabel* labelX;
 	QLabel* labelY;

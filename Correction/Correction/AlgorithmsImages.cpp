@@ -120,7 +120,7 @@ void AlgorithmsImages::clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet)
 		{
 			//create cvSubImage of size (cellSizeX x cellSizeY / 4):
 			cv::Point node = nodesSet.at(row, col);
-			cv::Size sizeSubImage(cellSize.width, cellSize.height / 4);
+			cv::Size sizeSubImage(cellSize.width / 2 , cellSize.height / 4);
 			cv::Rect roiSubImage;
 			getNodeSubImageROI(cvImage, sizeSubImage, node, roiSubImage);
 			cv::Mat cvSubImage = cv::Mat(cvImage, cv::Rect(roiSubImage.tl(), roiSubImage.br()));
@@ -177,23 +177,28 @@ void AlgorithmsImages::sumIntensityHorizontally(const cv::Mat& cvImage,  std::ve
 }
 
 
-void AlgorithmsImages::generateMask(const cv::Size& sizeLine, NodeType nodeType, cv::Mat& mask)
+void AlgorithmsImages::generateMask(const cv::Size& sizeImage, const cv::Size& sizeLine, NodeType nodeType, cv::Mat& mask)
 {
 	//create matrix of size (sizeLize x 3):
-	mask.create(sizeLine * 3, CV_8UC1);
+	mask.create(sizeImage, CV_8UC1);
 	mask = cv::Scalar(0);
+
 	//enumerate mask blocks:
+	const int c_width_image = sizeImage.width;
+	const int c_height_image = sizeImage.height;
 	const int c_width_line = sizeLine.width;
 	const int c_height_line = sizeLine.height;
-	cv::Mat blockTopLeft = cv::Mat(mask, cv::Rect(0, 0, c_width_line, c_height_line));
-	cv::Mat blockTop = cv::Mat(mask, cv::Rect(c_width_line, 0, c_width_line, c_height_line));
-	cv::Mat blockTopRight = cv::Mat(mask, cv::Rect(2 * c_width_line, 0, c_width_line, c_height_line));
-	cv::Mat blockLeft = cv::Mat(mask, cv::Rect(0, c_height_line, c_width_line, c_height_line));
-	cv::Mat blockCenter = cv::Mat(mask, cv::Rect(c_width_line, c_height_line, c_width_line, c_height_line));
-	cv::Mat blockRight = cv::Mat(mask, cv::Rect(2 * c_width_line, c_height_line, c_width_line, c_height_line));
-	cv::Mat blockBottomLeft = cv::Mat(mask, cv::Rect(0, 2 * c_height_line, c_width_line, c_height_line));
-	cv::Mat blockBottom = cv::Mat(mask, cv::Rect(c_width_line, 2 * c_height_line, c_width_line, c_height_line));
-	cv::Mat blockBottomRight = cv::Mat(mask, cv::Rect(2 * c_width_line, 2 * c_height_line, c_width_line, c_height_line));
+
+	cv::Size sizeBlockEmpty = cv::Size((c_width_image - c_width_line) / 2, (c_height_image - c_height_line) / 2);
+	cv::Mat blockTopLeft = cv::Mat(mask, cv::Rect(0, 0, sizeBlockEmpty.width, sizeBlockEmpty.height));
+	cv::Mat blockTop = cv::Mat(mask, cv::Rect(sizeBlockEmpty.width, 0, c_width_line, sizeBlockEmpty.height));
+	cv::Mat blockTopRight = cv::Mat(mask, cv::Rect(sizeBlockEmpty.width + c_width_line, 0, sizeBlockEmpty.width, sizeBlockEmpty.height));
+	cv::Mat blockLeft = cv::Mat(mask, cv::Rect(0, sizeBlockEmpty.height, sizeBlockEmpty.width, c_height_line));
+	cv::Mat blockCenter = cv::Mat(mask, cv::Rect(sizeBlockEmpty.width, sizeBlockEmpty.height, c_width_line, c_height_line));
+	cv::Mat blockRight = cv::Mat(mask, cv::Rect(sizeBlockEmpty.width + c_width_line, sizeBlockEmpty.height, sizeBlockEmpty.width, c_height_line));
+	cv::Mat blockBottomLeft = cv::Mat(mask, cv::Rect(0, sizeBlockEmpty.height + c_height_line, sizeBlockEmpty.width, sizeBlockEmpty.height));
+	cv::Mat blockBottom = cv::Mat(mask, cv::Rect(sizeBlockEmpty.width, sizeBlockEmpty.height + c_height_line, c_width_line, sizeBlockEmpty.height));
+	cv::Mat blockBottomRight = cv::Mat(mask, cv::Rect(sizeBlockEmpty.width + c_width_line, sizeBlockEmpty.height + c_height_line, sizeBlockEmpty.width, sizeBlockEmpty.height));
 	switch (nodeType)
 	{
 	case CENTER:
@@ -291,6 +296,14 @@ void AlgorithmsImages::getLineSize(const cv::Mat& cvImage, cv::Size& size)
 	Algorithms::findPeaks(derivativesX, 2, 3, peaksX);
 	size.width = peaksX[1] - peaksX[0];
 }
+
+void AlgorithmsImages::downsample(const cv::Mat& cvImage, cv::Mat& cvImageResult)
+{
+	cv::Mat cvImageDownsampled;
+	cv::pyrDown(cvImage, cvImageDownsampled, cv::Size(cvImage.cols / 2, cvImage.rows / 2));
+	cv::pyrUp(cvImageDownsampled, cvImageResult, cv::Size(cvImage.cols , cvImage.rows ));
+}
+
 
 void AlgorithmsImages::findCrosshair(const cv::Mat& cvSubImage, const cv::Point& posImage,  cv::Point& crosshair)
 {

@@ -17,6 +17,12 @@
     <Filter Include="Generated Files">
       <UniqueIdentifier>{91fa2905-6cba-4d56-8b75-895a4352ee9f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Generated Files\Debug">
+      <UniqueIdentifier>{28ef27fd-92be-4e14-9237-4bbd17444956}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Generated Files\Release">
+      <UniqueIdentifier>{1d7674ed-19c9-45b9-b6fd-4443b6f344d6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DataTransfer.cpp" />
@@ -27,16 +33,16 @@
     <ClCompile Include="ImageController.cpp" />
     <ClCompile Include="AlgorithmsImages.cpp" />
     <ClCompile Include="AlgorithmsCalculus.cpp" />
-    <ClCompile Include="GeneratedFiles\Debug\moc_GraphicsScene.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_GraphicsView.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_ImageController.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="NodesSet.cpp" />
+    <ClCompile Include="GeneratedFiles\Release\moc_GraphicsScene.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_GraphicsView.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_ImageController.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataTransfer.h" />
@@ -46,10 +52,19 @@
     <ClInclude Include="AlgorithmsCalculus.h" />
     <ClInclude Include="Parameters.h" />
     <ClInclude Include="NodesSet.h" />
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="GraphicsScene.h" />
     <CustomBuild Include="ImageController.h" />
     <CustomBuild Include="GraphicsView.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Correction.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon1.ico" />
   </ItemGroup>
 </Project>

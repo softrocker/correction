@@ -20,6 +20,7 @@ public:
 
 	void findNodesAccurately();
 	QVector<QPoint> getNodesVisual() const;
+	void test();
 	//std::vector<cv::Point> getNodes() const;
 private:
 	cv::Mat cvImage_;
