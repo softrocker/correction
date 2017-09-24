@@ -1,4 +1,5 @@
 #include <QGraphicsPixmapItem>
+#include <QGraphicsSceneMouseEvent>
 #include "GraphicsScene.h"
 #include "ImageDisplay.h"
 
@@ -9,7 +10,10 @@ GraphicsScene::GraphicsScene(QObject* parent) : QGraphicsScene(parent)
 
 void GraphicsScene::addImageBlocks(const ImageDisplay& imageDisplay)
 {
-	imageBlockItems_.clear();
+	if (!imageBlockItems_.empty())
+	{
+		deleteImageBlocks();
+	}
 	const int c_blocks_count_x = imageDisplay.blocksCountX;
 	const int c_blocks_count_y = imageDisplay.blocksCountY;
 	for (int row = 0; row < c_blocks_count_y; row++)
@@ -23,6 +27,16 @@ void GraphicsScene::addImageBlocks(const ImageDisplay& imageDisplay)
 			pixmapItem->setPos(col * imageDisplay.blockWidth, row * imageDisplay.blockHeight);
 		}
 	}
+}
+
+void GraphicsScene::deleteImageBlocks()
+{
+	for (int i = 0; i < imageBlockItems_.size(); i++)
+	{
+		removeItem(imageBlockItems_[i]); // remove from scene
+		delete imageBlockItems_[i]; // clear allocated memory
+	}
+	imageBlockItems_.clear(); 
 }
 
 void GraphicsScene::addNodesItems(const QVector<QPoint>& nodesPositions)
@@ -48,5 +62,9 @@ void GraphicsScene::deleteNodesItems()
 	nodesItems_.clear();
 }
 
-
-
+void GraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
+{
+	QPointF pos = event->scenePos();
+	int i = 0; 
+	i++;
+}

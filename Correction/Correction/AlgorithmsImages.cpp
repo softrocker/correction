@@ -120,7 +120,7 @@ void AlgorithmsImages::clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet)
 		{
 			//create cvSubImage of size (cellSizeX x cellSizeY / 4):
 			cv::Point node = nodesSet.at(row, col);
-			cv::Size sizeSubImage(cellSize.width / 2 , cellSize.height / 4);
+			cv::Size sizeSubImage(cellSize.width, cellSize.height / 4);
 			cv::Rect roiSubImage;
 			getNodeSubImageROI(cvImage, sizeSubImage, node, roiSubImage);
 			cv::Mat cvSubImage = cv::Mat(cvImage, cv::Rect(roiSubImage.tl(), roiSubImage.br()));

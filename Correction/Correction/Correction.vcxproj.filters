@@ -15,7 +15,9 @@
       <ParseFiles>false</ParseFiles>
     </Filter>
     <Filter Include="Generated Files">
-      <UniqueIdentifier>{91fa2905-6cba-4d56-8b75-895a4352ee9f}</UniqueIdentifier>
+      <UniqueIdentifier>{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}</UniqueIdentifier>
+      <Extensions>moc;h;cpp</Extensions>
+      <ParseFiles>true</ParseFiles>
     </Filter>
     <Filter Include="Generated Files\Debug">
       <UniqueIdentifier>{28ef27fd-92be-4e14-9237-4bbd17444956}</UniqueIdentifier>
@@ -30,7 +32,6 @@
     <ClCompile Include="GraphicsView.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
-    <ClCompile Include="ImageController.cpp" />
     <ClCompile Include="AlgorithmsImages.cpp" />
     <ClCompile Include="AlgorithmsCalculus.cpp" />
     <ClCompile Include="NodesSet.cpp" />
@@ -40,9 +41,20 @@
     <ClCompile Include="GeneratedFiles\Release\moc_GraphicsView.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_ImageController.cpp">
+    <ClCompile Include="GeneratedFiles\Debug\moc_Controller.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_Controller.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_Model.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_Model.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="Controller.cpp" />
+    <ClCompile Include="Model.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataTransfer.h" />
@@ -52,14 +64,13 @@
     <ClInclude Include="AlgorithmsCalculus.h" />
     <ClInclude Include="Parameters.h" />
     <ClInclude Include="NodesSet.h" />
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="GraphicsScene.h" />
-    <CustomBuild Include="ImageController.h" />
     <CustomBuild Include="GraphicsView.h" />
+    <CustomBuild Include="Controller.h" />
+    <CustomBuild Include="Model.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Correction.rc" />

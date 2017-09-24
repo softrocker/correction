@@ -9,7 +9,8 @@ class QPushButton;
 class GraphicsScene;
 class QLabel;
 
-class ImageController;
+class Model;
+class Controller;
 
 class MainWindow : public QMainWindow
 {
@@ -23,17 +24,18 @@ private:
 	void createLayouts();
 	void createViewsAndScenes();
 
-	void loadImage();
+	//void loadImage();
 	void saveImage();
-	void findNodesApproximately();
-	void findNodesAccurately();
+//	void findNodesApproximately();
+	//void findNodesAccurately();
 	void updateImage();
 
 	void setMousePos(const QPointF& pos);
 	void test();
 private:
+	Controller* controller_;
 
-	ImageController* imageController_;
+	Model* model_;
 
 	GraphicsScene* scene_;
 	GraphicsView* view_;

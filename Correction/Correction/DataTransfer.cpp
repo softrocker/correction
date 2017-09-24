@@ -5,6 +5,8 @@
 #include <QMessageBox>
 #include <QImageReader>
 
+#include <opencv2/highgui/highgui.hpp>
+
 namespace DataTransfer
 {
 	QImage loadImg(QWidget* parent)
@@ -20,6 +22,16 @@ namespace DataTransfer
 	QString imageName(QWidget* parent)
 	{
 		return QFileDialog::getOpenFileName(parent, QObject::tr("Choose image for import"), "", QObject::tr("Images (*.png *.jpg *.bmp)"));
+	}
+
+	void loadCvImage(QWidget* parent, cv::Mat& cvImage)
+	{
+		QString imgName = imageName(parent);
+		if (imgName.isEmpty())
+		{
+			return;
+		}
+		cvImage = cv::imread(imgName.toStdString(), CV_LOAD_IMAGE_GRAYSCALE);
 	}
 
 	void saveImage(QWidget* parent, const QImage& image)

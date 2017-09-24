@@ -16,20 +16,23 @@
 #include "GraphicsView.h"
 #include "GraphicsScene.h"
 #include "DataTransfer.h"
-#include "ImageController.h"
+#include "Model.h"
 #include "ImageDisplay.h"
+#include "Controller.h"
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
 {
+	createViewsAndScenes();
+	model_ = new Model(this);
+	controller_ = new Controller(model_, scene_);
 	createSettings();
 	createActions();
 	createMenu();
-	createViewsAndScenes();
 	createLayouts();
 
-	image_ = QImage();
-	imageController_ = new ImageController(this);
+	//image_ = QImage();
+	
 
 	connect(view_, &GraphicsView::mouseMoveS, this, &MainWindow::setMousePos);
 }
@@ -49,7 +52,7 @@ void MainWindow::createActions()
 	//file actions:
 	actionLoadImage_ = new QAction(tr("&Load image..."), this);
 	actionLoadImage_->setStatusTip(tr("Load image to file"));
-	connect(actionLoadImage_, &QAction::triggered, this, &MainWindow::loadImage);
+	connect(actionLoadImage_, &QAction::triggered, controller_, &Controller::loadImage);
 
 	actionExit_ = new QAction(tr("&Exit"), this);
 	actionExit_->setStatusTip(tr("Exit"));
@@ -58,11 +61,11 @@ void MainWindow::createActions()
 	//operation actions:
 	actionFindNodexApprox_ = new QAction(tr("&Find nodes approximately"), this);
 	actionFindNodexApprox_->setStatusTip(tr("Find nodes approximately"));
-	connect(actionFindNodexApprox_, &QAction::triggered, this, &MainWindow::findNodesApproximately);
+	connect(actionFindNodexApprox_, &QAction::triggered, controller_, &Controller::findNodesApproximately);
 
 	actionFindNodesAccurately_ = new QAction(tr("&Find nodes accurately"), this);
 	actionFindNodesAccurately_->setStatusTip(tr("Find nodes accurately"));
-	connect(actionFindNodesAccurately_, &QAction::triggered, this, &MainWindow::findNodesAccurately);
+	connect(actionFindNodesAccurately_, &QAction::triggered, controller_, &Controller::findNodesAccurately);
 
 	actionTest_ = new QAction(tr("&Test"), this);
 	connect(actionTest_, &QAction::triggered, this, &MainWindow::test);
@@ -115,35 +118,35 @@ void MainWindow::createMenu()
 	menuOperations->addAction(actionTest_);
 }
 
-void MainWindow::loadImage()
-{
-	QString imageName = DataTransfer::imageName(this);
-	if (imageName.isEmpty())
-		return;
-	scene_->clear();
-	imageController_->readImage(imageName.toStdString());
-	ImageDisplay imageDisplay;
-	imageController_->createVisualImageBlocks(imageDisplay);
-	scene_->addImageBlocks(imageDisplay);	
-}
+//void MainWindow::loadImage()
+//{
+//	QString imageName = DataTransfer::imageName(this);
+//	if (imageName.isEmpty())
+//		return;
+//	scene_->clear();
+//	model_->readImage(imageName.toStdString());
+//	ImageDisplay imageDisplay;
+//	model_->createVisualImageBlocks(imageDisplay);
+//	scene_->addImageBlocks(imageDisplay);	
+//}
 
 void MainWindow::saveImage()
 {
 	DataTransfer::saveImage(this, image_);
 }
 
-void MainWindow::findNodesApproximately()
-{
-	imageController_->findNodesApproximately();
-	scene_->addNodesItems(imageController_->getNodesVisual());
-}
+//void MainWindow::findNodesApproximately()
+//{
+//	model_->findNodesApproximately();
+//	scene_->addNodesItems(model_->getNodesVisual());
+//}
 
-void MainWindow::findNodesAccurately()
-{
-	imageController_->findNodesAccurately();
-	scene_->deleteNodesItems();
-	scene_->addNodesItems(imageController_->getNodesVisual());
-}
+//void MainWindow::findNodesAccurately()
+//{
+//	model_->findNodesAccurately();
+//	scene_->deleteNodesItems();
+//	scene_->addNodesItems(model_->getNodesVisual());
+//}
 
 void MainWindow::updateImage()
 {
@@ -158,5 +161,5 @@ void MainWindow::setMousePos(const QPointF& pos)
 
 void MainWindow::test()
 {
-	imageController_->test();
+	model_->test();
 }
