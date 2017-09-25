@@ -35,26 +35,20 @@
     <ClCompile Include="AlgorithmsImages.cpp" />
     <ClCompile Include="AlgorithmsCalculus.cpp" />
     <ClCompile Include="NodesSet.cpp" />
-    <ClCompile Include="GeneratedFiles\Release\moc_GraphicsScene.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_GraphicsView.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
     <ClCompile Include="GeneratedFiles\Debug\moc_Controller.cpp">
       <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_Controller.cpp">
-      <Filter>Generated Files\Release</Filter>
     </ClCompile>
     <ClCompile Include="GeneratedFiles\Debug\moc_Model.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_Model.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
     <ClCompile Include="Controller.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="GeneratedFiles\Debug\moc_GraphicsScene.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_GraphicsView.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataTransfer.h" />
@@ -64,7 +58,9 @@
     <ClInclude Include="AlgorithmsCalculus.h" />
     <ClInclude Include="Parameters.h" />
     <ClInclude Include="NodesSet.h" />
-    <ClInclude Include="resource.h" />
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="GraphicsScene.h" />
@@ -73,9 +69,9 @@
     <CustomBuild Include="Model.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Correction.rc" />
+    <Image Include="icon1.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icon1.ico" />
+    <ResourceCompile Include="Correction.rc" />
   </ItemGroup>
 </Project>

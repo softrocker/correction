@@ -27,19 +27,11 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_GraphicsScene.cpp" />
+    <ClCompile Include="GeneratedFiles\Debug\moc_GraphicsView.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_Model.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_Controller.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_GraphicsScene.cpp" />
-    <ClCompile Include="GeneratedFiles\Release\moc_GraphicsView.cpp" />
-    <ClCompile Include="GeneratedFiles\Release\moc_Model.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="GraphicsScene.cpp" />
     <ClCompile Include="GraphicsView.cpp" />
@@ -51,6 +43,7 @@
   <ItemGroup>
     <ClInclude Include="AlgorithmsCalculus.h" />
     <ClInclude Include="AlgorithmsImages.h" />
+    <ClInclude Include="resource.h" />
     <CustomBuild Include="Controller.h">
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing Controller.h...</Message>
@@ -90,7 +83,6 @@
     </CustomBuild>
     <ClInclude Include="NodesSet.h" />
     <ClInclude Include="Parameters.h" />
-    <ClInclude Include="resource.h" />
     <CustomBuild Include="GraphicsScene.h">
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing GraphicsScene.h...</Message>
@@ -131,10 +123,10 @@
     <ClInclude Include="MainWindow.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Correction.rc" />
+    <Image Include="icon1.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="icon1.ico" />
+    <ResourceCompile Include="Correction.rc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B12702AD-ABFB-343A-A199-8E24837244A3}</ProjectGuid>
@@ -261,7 +253,7 @@
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties MocDir=".\GeneratedFiles\$(ConfigurationName)" UicDir=".\GeneratedFiles" RccDir=".\GeneratedFiles" lupdateOptions="" lupdateOnBuild="0" lreleaseOptions="" Qt5Version_x0020_x64="msvc2015_64_2" MocOptions="" />
+      <UserProperties MocDir=".\GeneratedFiles\$(ConfigurationName)" UicDir=".\GeneratedFiles" RccDir=".\GeneratedFiles" lupdateOptions="" lupdateOnBuild="0" lreleaseOptions="" Qt5Version_x0020_x64="msvc2016_64" MocOptions="" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>
