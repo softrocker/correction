@@ -43,13 +43,11 @@ void Controller::createVisualImageBlocks(const cv::Mat& cvImage, ImageDisplay& i
 void Controller::findNodesApproximately()
 {
 	model_->findNodesApproximately();
-	//scene_->deleteNodesItems();
 	scene_->addNodesItems(model_->getNodesVisual());
 }
 
 void Controller::findNodesAccurately()
 {
 	model_->findNodesAccurately();
-	//scene_->deleteNodesItems();
 	scene_->addNodesItems(model_->getNodesVisual());
 }
