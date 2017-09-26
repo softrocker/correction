@@ -15,4 +15,7 @@ namespace Algorithms
 	void findPeaks(const std::vector<double>& values, int countPeaks, int neighborhood, std::vector<int>& peaks);
 
 	void differentiate(const std::vector<double>& values, std::vector<double>& derivatives);
+
+	double angleRadiansToDegrees(double angleRadians);
+	double constrainAngle(double x);
 }

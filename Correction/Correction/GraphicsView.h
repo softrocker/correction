@@ -17,7 +17,7 @@ signals:
 	void mouseMoveS(const QPointF& point);
 protected:
     void wheelEvent(QWheelEvent* event);
-	void mouseMoveEvent(QMouseEvent *event);
+	//void mouseMoveEvent(QMouseEvent *event);
 };
 
 #endif

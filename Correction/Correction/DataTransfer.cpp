@@ -5,6 +5,8 @@
 #include <QMessageBox>
 #include <QImageReader>
 
+#include <fstream>
+
 #include <opencv2/highgui/highgui.hpp>
 
 namespace DataTransfer
@@ -50,5 +52,15 @@ namespace DataTransfer
 		else
 			QMessageBox::critical(parent, QObject::tr("Save image error"), QObject::tr("Unknown format. Please, choose another format."));
 
+	}
+
+	void saveValuesToFile(const std::vector<double>& values, const std::string& filename)
+	{
+		std::ofstream streamOut(filename);
+		for (int i = 0; i < values.size(); i++)
+		{
+			streamOut << values[i] << std::endl;
+		}
+		streamOut.close();
 	}
 }

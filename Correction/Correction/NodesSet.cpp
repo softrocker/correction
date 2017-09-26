@@ -1,4 +1,11 @@
 #include "NodesSet.h"
+#include "Parameters.h"
+
+#define _USE_MATH_DEFINES // for C++  
+#include <math.h>  
+
+double angleBetween(const cv::Point &v1, const cv::Point &v2);
+double angleRadiansToDegrees(double angleRadians);
 
 std::vector<cv::Point> NodesSet::row(int index) const
 {
@@ -113,6 +120,32 @@ NodeType NodesSet::getNodeType(int row, int col)
 	}
 }
 
+bool NodesSet::empty()
+{
+	return nodes_.empty();
+}
+
+float NodesSet::getAngle(int row, int col, int dir) 
+{
+	assert(!empty());
+	assert(row >= 0 && row < rows() && col >= 0 && col < cols());
+	double angleRadians;
+	cv::Point node = at(row, col);
+	if (col < cols() - 1)
+	{
+		cv::Point nodeRight = at(row, col + 1);
+		angleRadians = angleBetween(nodeRight, node);
+	}
+	else // col == cols() - 1
+	{
+		cv::Point nodeLeft = at(row, col - 1);
+		angleRadians = angleBetween(node, nodeLeft);
+	}
+	if (dir == -1)
+		return -angleRadians;
+	return angleRadians;
+}
+
 int NodesSet::cols() const
 {
 	return nodes_.cols;
@@ -122,3 +155,11 @@ int NodesSet::rows() const
 {
 	return nodes_.rows;
 }
+
+double angleBetween(const cv::Point &p1, const cv::Point &p2)
+{
+	double dY = p2.y - p1.y;
+	double dX = p2.x - p1.x;
+	return atan2(dY, dX);
+}
+

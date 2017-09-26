@@ -5,7 +5,8 @@
 
 GraphicsScene::GraphicsScene(QObject* parent) : QGraphicsScene(parent)
 {
-
+	nodeSelected = false;
+	nodeSelectedIndex = -1;
 }
 
 void GraphicsScene::addImageBlocks(const ImageDisplay& imageDisplay)
@@ -64,7 +65,43 @@ void GraphicsScene::deleteNodesItems()
 
 void GraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
-	QPointF pos = event->scenePos();
-	int i = 0; 
-	i++;
+	const int c_distance_limit = 10;
+	for (int i = 0; i < nodesItems_.size(); i++)
+	{
+		QPointF posNode =  nodesItems_[i]->mapToScene(nodesItems_[i]->rect().center());
+		nodePosLast = posNode;
+		QPointF posEvent = event->scenePos();
+		QPointF dPos = posNode - posEvent;
+		qreal distance = sqrt(dPos.x() * dPos.x() + dPos.y() * dPos.y());
+		if (distance < c_distance_limit)
+		{
+			nodeSelected = true;
+			nodeSelectedIndex = i;
+			nodesItems_[i]->setBrush(QColor(0, 255, 0));
+			break;
+		}
+	}
+}
+
+void GraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
+	nodeSelected = false;
+	if (nodeSelectedIndex != -1)
+	{
+		QGraphicsEllipseItem* nodeItem = nodesItems_[nodeSelectedIndex];
+		nodeItem->setBrush(QColor(255, 0, 0));
+		QPointF nodePos = nodeItem->mapToScene(nodeItem->rect().center());
+		emit nodePosChangedS(nodeSelectedIndex, static_cast<int>(nodePos.x()), static_cast<int>(nodePos.y()));
+	}
+	nodeSelectedIndex = -1;
+}
+
+void GraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+	if (nodeSelected && (nodeSelectedIndex != -1))
+	{
+		QPointF dPos = event->scenePos() - nodePosLast;
+		nodesItems_[nodeSelectedIndex]->moveBy(dPos.x(), dPos.y());
+		nodePosLast = event->scenePos();
+	}
 }

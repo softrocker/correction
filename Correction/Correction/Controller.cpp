@@ -12,6 +12,7 @@ Controller::Controller(Model* model, GraphicsScene* scene)
 {
 	model_ = model;
 	scene_ = scene;
+	connect(scene, &GraphicsScene::nodePosChangedS, model, &Model::setNodePosition);
 }
 
 Controller::~Controller()
@@ -40,14 +41,14 @@ void Controller::createVisualImageBlocks(const cv::Mat& cvImage, ImageDisplay& i
 	AlgorithmsImages::createVisualImageBlocks(cvImage, c_block_width, c_block_height, imageDisplay);
 }
 
-void Controller::findNodesApproximately()
+void Controller::findNodesApproximately(int rows_count, int cols_count)
 {
-	model_->findNodesApproximately();
+	model_->findNodesApproximately(rows_count,  cols_count);
 	scene_->addNodesItems(model_->getNodesVisual());
 }
 
-void Controller::findNodesAccurately()
+void Controller::findNodesAccurately(int rows_count, int cols_count)
 {
-	model_->findNodesAccurately();
+	model_->findNodesAccurately( rows_count,  cols_count);
 	scene_->addNodesItems(model_->getNodesVisual());
 }

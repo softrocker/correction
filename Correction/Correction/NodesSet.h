@@ -24,13 +24,14 @@ public:
 	int cols() const;
 	int rows() const;
 	cv::Mat_<cv::Point> getNodes() const;
-	const cv::Point& at(int row, int col) const;
 	cv::Point& at(int row, int col);
+	const cv::Point& at(int row, int col) const;
 	const cv::Point& center() const;
 	cv::Size getCellSize() const;
 	void setNode(int row, int col, const cv::Point& p);
 	NodeType getNodeType(int row, int col);
-
+	bool empty();
+	float getAngle(int row, int col, int dir); // returns approximate value of angle (in radians) of the cross (by approximately found nodes)
 private:
 	cv::Mat_<cv::Point> nodes_;
 };

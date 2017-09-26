@@ -7,6 +7,7 @@
 #include <QPushbutton>
 #include <QDebug>
 #include <QLabel>
+#include <QSettings>
 
 #include <iostream>
 #include <string>
@@ -19,10 +20,12 @@
 #include "Model.h"
 #include "ImageDisplay.h"
 #include "Controller.h"
+#include "ParametersWidget.h"
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
 {
+	
 	createViewsAndScenes();
 	model_ = new Model(this);
 	controller_ = new Controller(model_, scene_);
@@ -30,11 +33,14 @@ MainWindow::MainWindow(QWidget *parent)
 	createActions();
 	createMenu();
 	createLayouts();
-
-	//image_ = QImage();
-	
+	loadSettings();
 
 	connect(view_, &GraphicsView::mouseMoveS, this, &MainWindow::setMousePos);
+	connect(this, &MainWindow::applySettingsS, parametersWidget_, &ParametersWidget::setParameters);
+	connect(parametersWidget_, &ParametersWidget::parametersChangedS, this, &MainWindow::setParameters);
+	//connect(this, &MainWindow::close, this, [&]() { saveSettings(); return true; });
+
+	applyParameters();
 }
 
 MainWindow::~MainWindow()
@@ -61,11 +67,11 @@ void MainWindow::createActions()
 	//operation actions:
 	actionFindNodexApprox_ = new QAction(tr("&Find nodes approximately"), this);
 	actionFindNodexApprox_->setStatusTip(tr("Find nodes approximately"));
-	connect(actionFindNodexApprox_, &QAction::triggered, controller_, &Controller::findNodesApproximately);
+	connect(actionFindNodexApprox_, &QAction::triggered, controller_, [&](bool checked){controller_->findNodesApproximately(params_.gridRows, params_.gridCols); });
 
 	actionFindNodesAccurately_ = new QAction(tr("&Find nodes accurately"), this);
 	actionFindNodesAccurately_->setStatusTip(tr("Find nodes accurately"));
-	connect(actionFindNodesAccurately_, &QAction::triggered, controller_, &Controller::findNodesAccurately);
+	connect(actionFindNodesAccurately_, &QAction::triggered, controller_, [&](bool checked) {controller_->findNodesAccurately(params_.gridRows, params_.gridCols); });
 
 	actionTest_ = new QAction(tr("&Test"), this);
 	connect(actionTest_, &QAction::triggered, this, &MainWindow::test);
@@ -76,7 +82,7 @@ void::MainWindow::createViewsAndScenes()
 {
 	scene_ = new GraphicsScene(this);
 	view_ = new GraphicsView(scene_);
-	view_->setDragMode(QGraphicsView::ScrollHandDrag);
+	//view_->setDragMode(QGraphicsView::ScrollHandDrag);
 }
 
 void MainWindow::createLayouts()
@@ -86,6 +92,8 @@ void MainWindow::createLayouts()
 
 	QLayout* imagesLayout = new QHBoxLayout();
 	imagesLayout->addWidget(view_);
+	parametersWidget_ = new ParametersWidget(this);
+	imagesLayout->addWidget(parametersWidget_);
 
 	QHBoxLayout* coordinatesLayout = new QHBoxLayout();
 	coordinatesLayout->addStretch();
@@ -98,6 +106,7 @@ void MainWindow::createLayouts()
 	labelY->setFixedWidth(100);
 	coordinatesLayout->addWidget(labelY);
 
+	coordinatesLayout->addStretch();
 
 	QLayout* mainLayout = new QVBoxLayout();
 	mainLayout->addItem(imagesLayout);
@@ -109,7 +118,6 @@ void MainWindow::createMenu()
 {
 	QMenu* menuMain = menuBar()->addMenu(tr("File"));
 	menuMain->addAction(actionLoadImage_);
-	//menuMain->addAction(actionSaveImage_);
 	menuMain->addAction(actionExit_);
 
 	QMenu* menuOperations = menuBar()->addMenu(tr("Operations"));
@@ -118,48 +126,51 @@ void MainWindow::createMenu()
 	menuOperations->addAction(actionTest_);
 }
 
-//void MainWindow::loadImage()
-//{
-//	QString imageName = DataTransfer::imageName(this);
-//	if (imageName.isEmpty())
-//		return;
-//	scene_->clear();
-//	model_->readImage(imageName.toStdString());
-//	ImageDisplay imageDisplay;
-//	model_->createVisualImageBlocks(imageDisplay);
-//	scene_->addImageBlocks(imageDisplay);	
-//}
-
-void MainWindow::saveImage()
-{
-	DataTransfer::saveImage(this, image_);
-}
-
-//void MainWindow::findNodesApproximately()
-//{
-//	model_->findNodesApproximately();
-//	scene_->addNodesItems(model_->getNodesVisual());
-//}
-
-//void MainWindow::findNodesAccurately()
-//{
-//	model_->findNodesAccurately();
-//	scene_->deleteNodesItems();
-//	scene_->addNodesItems(model_->getNodesVisual());
-//}
-
-void MainWindow::updateImage()
-{
-	scene_->update();
-}
-
 void MainWindow::setMousePos(const QPointF& pos)
 {
 	labelX->setText("x = " + QString().setNum(pos.x(), 'f', 3));
 	labelY->setText("y = " + QString().setNum(pos.y(), 'f', 3));
 }
 
+void MainWindow::loadSettings()
+{
+	QSettings settings("settings", QSettings::IniFormat);
+	if (settings.contains("grid_cols"))
+	{
+		params_.gridCols = settings.value("grid_cols").toInt();
+	}
+	if (settings.contains("grid_rows"))
+	{
+		params_.gridRows = settings.value("grid_rows").toInt();
+	}
+}
+
+void MainWindow::saveSettings()
+{
+	QSettings settings("settings", QSettings::IniFormat);
+	settings.setValue("grid_cols", params_.gridCols);
+	settings.setValue("grid_rows", params_.gridRows);
+}
+
+void MainWindow::applyParameters()
+{
+	if (params_.valid())
+	{
+		emit applySettingsS(params_);
+	}
+}
+
 void MainWindow::test()
 {
 	model_->test();
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+	saveSettings();
+}
+
+void MainWindow::setParameters(const Parameters& params)
+{
+	params_ = params;
 }

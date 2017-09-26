@@ -4,10 +4,21 @@
 #include "Model.h"
 #include "AlgorithmsImages.h"
 #include "ImageDisplay.h"
+#include "AlgorithmsCalculus.h"
+#include "DataTransfer.h"
+
+#include <QMessageBox>
+
+#define _USE_MATH_DEFINES // for C++  
+#include <math.h>  
+
+
+
 
 Model::Model(QObject* parent) : QObject(parent)
 {
-
+	nodeCur_ = cv::Point(INT_MIN, INT_MIN);
+	indexCur_ = INT_MIN;
 }
 
 Model::~Model()
@@ -28,15 +39,24 @@ void Model::setImage(const cv::Mat& cvImage)
 
 
 
-void Model::findNodesApproximately()
+void Model::findNodesApproximately(int rows, int cols)
 {
-	AlgorithmsImages::findNodesApproximately(cvImage_, nodesSet_);
+	assert(!cvImage_.empty());
+	if (cvImage_.empty())
+	{
+		return;
+	}
+	AlgorithmsImages::findNodesApproximately(cvImage_, nodesSet_,  rows,  cols);
 	AlgorithmsImages::clarifyNodes(cvImage_, nodesSet_);
 	AlgorithmsImages::clarifyNodes2(cvImage_, nodesSet_);
 }
 
-void Model::findNodesAccurately()
+void Model::findNodesAccurately(int rows, int cols)
 {
+	if (!valid())
+	{
+		return;
+	}
 	cv::Size sizeImage = nodesSet_.getCellSize();
 
 	for (int row = 0; row < nodesSet_.rows(); row++)
@@ -87,37 +107,93 @@ QVector<QPoint> Model::getNodesVisual() const
 
 void Model::test()
 {
+	assert(nodeCur_ != cv::Point(INT_MIN, INT_MIN));
+	assert(indexCur_ != INT_MIN);
+	if (nodeCur_ == cv::Point(INT_MIN, INT_MIN) || indexCur_ == INT_MIN)
+	{
+		return;
+	}
 	cv::Size sizeImage = nodesSet_.getCellSize() / 2;
-	cv::Point node = nodesSet_.center();
+	cv::Point node = nodeCur_;
 	cv::Rect roiCorrected;
 	AlgorithmsImages::getNodeSubImageROI(cvImage_, sizeImage, node, roiCorrected);
 	cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected);
 
-	cv::Mat cvSubImageBinarized;
-	cv::threshold(cvSubImage, cvSubImageBinarized, 120, 255, cv::THRESH_BINARY);
+	int row(-1);
+	int col(-1);
+	getRowColByIndex(indexCur_, row, col);
+	double angle = nodesSet_.getAngle(row, col, -1);
 
-	std::vector<cv::Vec2f>lines;
-	HoughLines(cvSubImageBinarized, lines, 1, CV_PI / 180, std::min(roiCorrected.width, roiCorrected.height));
-
-	cv::Mat imageWithLinesColor;
-	cv::cvtColor(cvSubImageBinarized, imageWithLinesColor, cv::COLOR_GRAY2BGR);
-
-	for (size_t i = 0; i < lines.size(); i++)
+	cv::Mat subImageColored;
+	cv::cvtColor(cvSubImage, subImageColored, cv::COLOR_GRAY2BGR);
+	//calculate 
+	const int c_count = cvSubImage.rows + cvSubImage.cols;
+	std::vector<double> sums(c_count);
+	for (int i = 0; i < c_count; i++)
 	{
-		float rho = lines[i][0];
-		float theta = lines[i][1];
-		double a = cos(theta), b = sin(theta);
+		// find 2 points, between which we will draw line:
+		int rho = -i;
+		double theta = M_PI / 2 - angle;
+		double a = cos(theta);
+		double b = sin(theta);
 		double x0 = a*rho, y0 = b*rho;
-		cv::Point pt1(cvRound(x0 + 1000 * (-b)),
-			cvRound(y0 + 1000 * (a)));
-		cv::Point pt2(cvRound(x0 - 1000 * (-b)),
-			cvRound(y0 - 1000 * (a)));
-		cv::line(imageWithLinesColor, pt1, pt2, cv::Scalar(0, 0, 255), 3, 8);
+			cv::Point pt1(cvRound(x0 + 1000 * (-b)),
+				cvRound(y0 + 1000 * (a)));
+			cv::Point pt2(cvRound(x0 - 1000 * (-b)),
+				cvRound(y0 - 1000 * (a)));
+
+		// sum points intensity along line:
+		cv::LineIterator it(cvSubImage, pt1, pt2, 8);
+		for (int k = 0; k < it.count; k++, ++it)
+		{
+			int value = cvSubImage.at<uchar>(it.pos());
+			sums[i] += value;
+		}
+		sums[i] /= it.count;
 	}
-	//cv::Mat cvSubImageDownsampled = cvSubImage.clone();
-	//const int c_iteration_count = 4;
-	//for (int i = 0; i < c_iteration_count; i++)
-	//{
-	//	AlgorithmsImages::downsample(cvSubImageDownsampled, cvSubImageDownsampled);
-	//}
+	
+	DataTransfer::saveValuesToFile(sums, "sums.txt");
+
+	std::vector<double> sumsSmooth;
+	try
+	{
+		cv::GaussianBlur(sums, sumsSmooth, cv::Size(5, 1), 0, 0, cv::BORDER_REFLECT_101);
+	}
+	catch (std::exception& exc)
+	{
+		QMessageBox::critical(NULL, tr("Error during calculation"), QString(exc.what()));
+	}
+
+	DataTransfer::saveValuesToFile(sumsSmooth, "sums_smooth.txt");
+
+	std::vector<double> derivatives;
+	Algorithms::differentiate(sumsSmooth, derivatives);
+	
+	std::vector<int> peaks;
+	Algorithms::findPeaks(derivatives, 2, 5, peaks);
+	DataTransfer::saveValuesToFile(derivatives, "derivatives.txt");
+	double lineWidth = peaks[1] - peaks[0];
+}
+
+void Model::setNodePosition(int index, int posX, int posY)
+{
+	int row = index / nodesSet_.cols();
+	int col = index % nodesSet_.cols();
+	cv::Point node = cv::Point(posX, posY);
+	nodesSet_.setNode(row, col, node);
+	nodeCur_ = node;
+	indexCur_ = index;
+}
+
+bool Model::valid()
+{
+	assert(!cvImage_.empty());
+	assert(!nodesSet_.empty());
+	return (!cvImage_.empty() && !nodesSet_.empty());
+}
+
+void Model::getRowColByIndex(int index, int& row, int& col)
+{
+	row = index / nodesSet_.cols();
+	col = index % nodesSet_.cols();
 }

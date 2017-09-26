@@ -1,5 +1,8 @@
 #include "AlgorithmsCalculus.h"
 #include <algorithm>
+#define _USE_MATH_DEFINES // for C++  
+#include <math.h>  
+#include <assert.h>
 
 void Algorithms::findPeaks(const std::vector<double>& values, int countPeaks, int neighborhood, std::vector<int>& peaks)
 {
@@ -38,4 +41,17 @@ void Algorithms::differentiate(const std::vector<double>& values, std::vector<do
 	{
 		derivatives[i] = (values[i + 1] - values[i - 1]) / 2;
 	}
+}
+
+double Algorithms::angleRadiansToDegrees(double angleRadians)
+{
+	return  angleRadians * (180.0 / M_PI);
+}
+
+
+double Algorithms::constrainAngle(double angle) {
+	angle = fmod(angle + 180, 360);
+	if (angle < 0)
+		angle += 360;
+	return angle - 180;
 }

@@ -36,7 +36,7 @@ void AlgorithmsImages::createVisualImageBlocks(const cv::Mat& cvImage, int block
 	
 }
 
-void AlgorithmsImages::findNodesApproximately(const cv::Mat& cvImage, NodesSet& nodesSet)
+void AlgorithmsImages::findNodesApproximately(const cv::Mat& cvImage, NodesSet& nodesSet, int grid_rows, int grid_cols)
 {
 	assert(!cvImage.empty());
 	if (cvImage.empty())
@@ -53,9 +53,9 @@ void AlgorithmsImages::findNodesApproximately(const cv::Mat& cvImage, NodesSet& 
 
 	//finding peaks:
 	std::vector<int> peaksY;
-	Algorithms::findPeaks(sumsAlongX, c_count_grid_rows, c_neighborhood, peaksY);
+	Algorithms::findPeaks(sumsAlongX, grid_rows, c_neighborhood, peaksY);
 	std::vector<int> peaksX;
-	Algorithms::findPeaks(sumsAlongY, c_count_grid_cols, c_neighborhood, peaksX);
+	Algorithms::findPeaks(sumsAlongY, grid_cols, c_neighborhood, peaksX);
 
 	//finding nodes positions using finded peaks:
 	bool startFromBottom = true;
@@ -75,7 +75,7 @@ void AlgorithmsImages::findNodesApproximately(const cv::Mat& cvImage, NodesSet& 
 		}
 	}
 
-	nodesSet.create(nodes, c_count_grid_cols, c_count_grid_rows);
+	nodesSet.create(nodes, grid_cols, grid_rows);
 }
 
 void AlgorithmsImages::clarifyNodes(const cv::Mat& cvImage, NodesSet& nodesSet)
@@ -96,7 +96,7 @@ void AlgorithmsImages::clarifyNodes(const cv::Mat& cvImage, NodesSet& nodesSet)
 
 		//find peaks:
 		std::vector<int> peaks;
-		Algorithms::findPeaks(sums, c_count_grid_rows, c_neighborhood, peaks);
+		Algorithms::findPeaks(sums, nodesSet.rows(), c_neighborhood, peaks);
 		std::reverse(peaks.begin(), peaks.end());
 
 		// shift each node in column to corresponding peak

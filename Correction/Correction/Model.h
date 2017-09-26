@@ -15,15 +15,22 @@ public:
 	Model(QObject* parent);
 	~Model();
 	void setImage(const cv::Mat& cvImage); //void readImage(const std::string& filename);
-	//void createVisualImageBlocks(ImageDisplay& imageDisplay);
-	void findNodesApproximately();
+	void findNodesApproximately(int rows, int cols);
 
-	void findNodesAccurately();
+	void findNodesAccurately(int rows, int cols);
 	QVector<QPoint> getNodesVisual() const;
 	void test();
-	//std::vector<cv::Point> getNodes() const;
+
+	void setNodePosition(int index, int posX, int posY);
+
+	bool valid();
 private:
+	void getRowColByIndex(int index, int& row, int& col);
+private:
+	
 	cv::Mat cvImage_;
 	NodesSet nodesSet_;
+	cv::Point nodeCur_; // special variable for testing
+	int indexCur_; // also variable for testing
 	//std::vector<cv::Point> nodes_;
 };

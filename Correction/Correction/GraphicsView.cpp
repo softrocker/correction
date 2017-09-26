@@ -25,7 +25,7 @@ void GraphicsView::wheelEvent(QWheelEvent *event)
 }
 
 
-void GraphicsView::mouseMoveEvent(QMouseEvent *event)
-{
-	emit mouseMoveS(mapToScene(event->pos()));
-}
+//void GraphicsView::mouseMoveEvent(QMouseEvent *event)
+//{
+//	emit mouseMoveS(mapToScene(event->pos()));
+//}

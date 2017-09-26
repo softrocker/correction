@@ -16,8 +16,9 @@ public:
 	~Controller();
 	void loadImage();
 	void createVisualImageBlocks(const cv::Mat& cvImage, ImageDisplay& imageDisplay);
-	void findNodesApproximately();
-	void findNodesAccurately();
+	void findNodesApproximately(int rows_count, int cols_count);
+	void findNodesAccurately(int rows_count, int cols_count);
+
 private:
 	GraphicsScene* scene_;
 	Model* model_;

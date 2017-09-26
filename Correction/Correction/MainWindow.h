@@ -3,6 +3,8 @@
 
 #include <QtWidgets/QMainWindow>
 
+
+
 class QGraphicsScene;
 class GraphicsView;
 class QPushButton;
@@ -11,27 +13,33 @@ class QLabel;
 
 class Model;
 class Controller;
+class ParametersWidget;
+
+#include "Parameters.h"
 
 class MainWindow : public QMainWindow
 {
+	Q_OBJECT
+
 public:
 	MainWindow(QWidget* parent = 0);
 	~MainWindow();
+
+signals:
+	void applySettingsS(const Parameters& params);
 private:
 	void createSettings();
 	void createMenu();
 	void createActions();
 	void createLayouts();
 	void createViewsAndScenes();
-
-	//void loadImage();
-	void saveImage();
-//	void findNodesApproximately();
-	//void findNodesAccurately();
-	void updateImage();
-
 	void setMousePos(const QPointF& pos);
+	void loadSettings();
+	void saveSettings();
+	void applyParameters();
 	void test();
+	void closeEvent(QCloseEvent *event);
+	void setParameters(const Parameters& params);
 private:
 	Controller* controller_;
 
@@ -39,7 +47,6 @@ private:
 
 	GraphicsScene* scene_;
 	GraphicsView* view_;
-	QImage image_;
 
 	QAction* actionLoadImage_;
 	QAction* actionExit_;
@@ -51,6 +58,10 @@ private:
 
 	QLabel* labelX;
 	QLabel* labelY;
+
+	ParametersWidget* parametersWidget_;
+
+	Parameters params_;
 };
 
 #endif 

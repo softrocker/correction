@@ -16,7 +16,7 @@ namespace AlgorithmsImages
 	void getLineSize2(const cv::Mat& cvImage, cv::Size& size);
 	void findCrosshair(const cv::Mat& cvSubImage, const cv::Point& posImage, cv::Point& crosshair);
 	void createVisualImageBlocks(const cv::Mat& cvImage, int blockWidth, int blockHeight, ImageDisplay& imageDisplay);
-	void findNodesApproximately(const cv::Mat& cvImage, NodesSet& nodesSet);
+	void findNodesApproximately(const cv::Mat& cvImage, NodesSet& nodesSet, int grid_rows, int grid_cols);
 	void clarifyNodes(const cv::Mat& cvImage, NodesSet& nodesSet);
 	void clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet);
 	void sumIntensityVertically(const cv::Mat& cvImage, std::vector<double>& sums);
