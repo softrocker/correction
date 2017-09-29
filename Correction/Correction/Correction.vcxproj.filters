@@ -32,7 +32,6 @@
     <ClCompile Include="GraphicsView.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
-    <ClCompile Include="AlgorithmsImages.cpp" />
     <ClCompile Include="AlgorithmsCalculus.cpp" />
     <ClCompile Include="NodesSet.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_Controller.cpp">
@@ -60,6 +59,15 @@
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
     <ClCompile Include="GeneratedFiles\Release\moc_MainWindow.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="AlgorithmsImages.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_Controller.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_Model.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
   </ItemGroup>

@@ -18,4 +18,7 @@ namespace Algorithms
 
 	double angleRadiansToDegrees(double angleRadians);
 	double constrainAngle(double x);
+	int sign(double x);
+	bool numbersEqual(double a, double b);
+	void nullifyBounds(int neighborhood, std::vector<double>& values);
 }

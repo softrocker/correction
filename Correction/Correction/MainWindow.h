@@ -10,6 +10,7 @@ class GraphicsView;
 class QPushButton;
 class GraphicsScene;
 class QLabel;
+class QProgressBar;
 
 class Model;
 class Controller;
@@ -40,6 +41,7 @@ private:
 	void test();
 	void closeEvent(QCloseEvent *event);
 	void setParameters(const Parameters& params);
+	void setProgress(int progressPercents);
 private:
 	Controller* controller_;
 
@@ -53,11 +55,13 @@ private:
 
 	QAction* actionFindNodexApprox_;
 	QAction* actionFindNodesAccurately_;
-
+	QAction* actionWriteTable_;
 	QAction* actionTest_;
 
-	QLabel* labelX;
-	QLabel* labelY;
+	QLabel* labelX_;
+	QLabel* labelY_;
+
+	QProgressBar* progressBar_;
 
 	ParametersWidget* parametersWidget_;
 

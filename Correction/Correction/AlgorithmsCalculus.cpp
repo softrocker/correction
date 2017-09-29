@@ -4,6 +4,8 @@
 #include <math.h>  
 #include <assert.h>
 
+
+
 void Algorithms::findPeaks(const std::vector<double>& values, int countPeaks, int neighborhood, std::vector<int>& peaks)
 {
 	peaks.reserve(countPeaks);
@@ -54,4 +56,30 @@ double Algorithms::constrainAngle(double angle) {
 	if (angle < 0)
 		angle += 360;
 	return angle - 180;
+}
+
+int Algorithms::sign(double x)
+{
+	if (numbersEqual(x, 0))
+	{
+		return 1;
+	}
+	return (x > 0) - (x < 0);
+}
+
+bool Algorithms::numbersEqual(double a, double b)
+{
+	double eps = 1E-8;
+	return fabs(a - b) < eps;
+}
+
+void Algorithms::nullifyBounds(int neighborhood, std::vector<double>& values)
+{
+	const int count_elems = values.size();
+	assert(2 * neighborhood < count_elems);
+	for (int i = 0; i < neighborhood; i++)
+	{
+		values[i] = 0;
+		values[count_elems - 1 - i] = 0;
+	}
 }

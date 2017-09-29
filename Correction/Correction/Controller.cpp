@@ -13,6 +13,9 @@ Controller::Controller(Model* model, GraphicsScene* scene)
 	model_ = model;
 	scene_ = scene;
 	connect(scene, &GraphicsScene::nodePosChangedS, model, &Model::setNodePosition);
+	connect(model, &Model::sendProgressS, this, &Controller::sendProgressS);
+	connect(model, &Model::operationfinishedS, this, [&] {sendProgressS(0); });
+	connect(this, &Controller::doOperationS, model, &Model::doOperation);
 }
 
 Controller::~Controller()
@@ -41,14 +44,43 @@ void Controller::createVisualImageBlocks(const cv::Mat& cvImage, ImageDisplay& i
 	AlgorithmsImages::createVisualImageBlocks(cvImage, c_block_width, c_block_height, imageDisplay);
 }
 
-void Controller::findNodesApproximately(int rows_count, int cols_count)
-{
-	model_->findNodesApproximately(rows_count,  cols_count);
-	scene_->addNodesItems(model_->getNodesVisual());
-}
+//void Controller::findNodesApproximately(int rows_count, int cols_count)
+//{
+//	model_->findNodesApproximately(rows_count,  cols_count);
+//	scene_->addNodesItems(model_->getNodesVisual());
+//}
+//
+//void Controller::findNodesAccurately(int rows_count, int cols_count)
+//{
+//	model_->findNodesAccurately( rows_count,  cols_count);
+//	scene_->addNodesItems(model_->getNodesVisual());
+//}
+//
+//void Controller::calculateCorrectionTable()
+//{
+//	emit doOperationS(OPERATION_WRITE_CORRECTION_TABLE);
+//}
 
-void Controller::findNodesAccurately(int rows_count, int cols_count)
+void Controller::doOperation(Operation operation, const QVariantList& params)
 {
-	model_->findNodesAccurately( rows_count,  cols_count);
-	scene_->addNodesItems(model_->getNodesVisual());
+	switch (operation)
+	{
+
+	case OPERATION_FIND_NODES_APPROX:
+
+		emit doOperationS(OPERATION_FIND_NODES_APPROX, params);
+		scene_->addNodesItems(model_->getNodesVisual());
+		break;
+
+	case OPERATION_FIND_NODES_ACCURATE:
+		emit doOperationS(OPERATION_FIND_NODES_ACCURATE, params);
+		scene_->addNodesItems(model_->getNodesVisual());
+		break;
+
+	case OPERATION_WRITE_CORRECTION_TABLE:
+		emit doOperationS(OPERATION_WRITE_CORRECTION_TABLE, params);
+		break;
+	default:
+		break;
+	}
 }
