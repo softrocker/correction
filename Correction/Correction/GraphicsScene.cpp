@@ -2,11 +2,13 @@
 #include <QGraphicsSceneMouseEvent>
 #include "GraphicsScene.h"
 #include "ImageDisplay.h"
+#include "AlgorithmsCalculus.h"
 
 GraphicsScene::GraphicsScene(QObject* parent) : QGraphicsScene(parent)
 {
 	nodeSelected = false;
 	nodeSelectedIndex = -1;
+	scale_ = 1.0;
 }
 
 void GraphicsScene::addImageBlocks(const ImageDisplay& imageDisplay)
@@ -50,6 +52,8 @@ void GraphicsScene::addNodesItems(const QVector<QPoint>& nodesPositions)
 	{
 		QGraphicsEllipseItem* nodeItem = addEllipse(QRect(nodesPositions[i].x()-5, nodesPositions[i].y()-5, 10, 10), QPen(QColor(255, 0, 0)), QBrush(QColor(255, 0, 0)));
 		addItem(nodeItem);
+		nodeItem->setTransformOriginPoint(nodeItem->rect().center());
+		nodeItem->setScale(scale_);
 		nodesItems_.push_back(nodeItem);
 	}
 }
@@ -65,10 +69,15 @@ void GraphicsScene::deleteNodesItems()
 
 void GraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
 {
-	const int c_distance_limit = 10;
+	if (event->button() != Qt::RightButton)
+	{
+		return;
+	}
+
+	const double c_distance_limit = 10 * scale_;
 	for (int i = 0; i < nodesItems_.size(); i++)
 	{
-		QPointF posNode =  nodesItems_[i]->mapToScene(nodesItems_[i]->rect().center());
+		QPointF posNode = nodesItems_[i]->mapToScene(nodesItems_[i]->rect().center());
 		nodePosLast = posNode;
 		QPointF posEvent = event->scenePos();
 		QPointF dPos = posNode - posEvent;
@@ -78,6 +87,7 @@ void GraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
 			nodeSelected = true;
 			nodeSelectedIndex = i;
 			nodesItems_[i]->setBrush(QColor(0, 255, 0));
+			emit nodeSelectedS(nodeSelectedIndex);
 			break;
 		}
 	}
@@ -98,10 +108,28 @@ void GraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
 void GraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
+	QPointF mousePos = event->scenePos();
+	emit mousePosChangedS(mousePos);
 	if (nodeSelected && (nodeSelectedIndex != -1))
 	{
-		QPointF dPos = event->scenePos() - nodePosLast;
+		QPointF dPos = mousePos - nodePosLast;
 		nodesItems_[nodeSelectedIndex]->moveBy(dPos.x(), dPos.y());
-		nodePosLast = event->scenePos();
+		nodePosLast = mousePos;
+	}
+}
+
+
+void GraphicsScene::setScale(double scaleFactor)
+{
+	Q_ASSERT(!Algorithms::numbersEqual(scaleFactor, 0));
+	if (Algorithms::numbersEqual(scaleFactor, 0))
+	{
+		return;
+	}
+	scale_ /= scaleFactor; 
+	for (int i = 0; i < nodesItems_.size(); i++)
+	{
+		nodesItems_[i]->setTransformOriginPoint(nodesItems_[i]->rect().center());
+		nodesItems_[i]->setScale(scale_);
 	}
 }

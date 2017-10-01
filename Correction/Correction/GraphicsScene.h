@@ -4,6 +4,7 @@
 
 class QGraphicsPixmapItem;
 struct ImageDisplay;
+class QPointF;
 
 class GraphicsScene : public QGraphicsScene
 {
@@ -14,8 +15,13 @@ public:
 	void deleteImageBlocks();
 	void addNodesItems(const QVector<QPoint>& nodesPositions);
 	void deleteNodesItems();
+	void setScale(double scale);
 signals:
+	
+	void nodeSelectedS(int indexNode);
 	void nodePosChangedS(int index, int posX, int posY);
+	void mousePosChangedS(const QPointF& pos);
+
 protected:
 	virtual	void mousePressEvent(QGraphicsSceneMouseEvent* event);
 	virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
@@ -25,5 +31,6 @@ private:
 	QVector<QGraphicsEllipseItem*> nodesItems_;
 	bool nodeSelected;
 	int nodeSelectedIndex;
+	double scale_;
 	QPointF nodePosLast;
 };

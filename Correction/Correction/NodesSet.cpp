@@ -80,43 +80,44 @@ NodeType NodesSet::getNodeType(int row, int col)
 {
 	if ((row > 0) && (row < rows() - 1) && (col > 0) && (col < cols() - 1))
 	{
-		return CENTER;
+		return NODETYPE_CENTER;
 	}
 	if (row == 0 && col == 0)
 	{
-		return BOTTOM_LEFT;
+		return NODETYPE_BOTTOM_LEFT;
 	}
 	else if ((row == 0) && (col > 0) && (col < cols() - 1))
 	{
-		return BOTTOM;
+		return NODETYPE_BOTTOM;
 	}
 	else if ((row == 0) && (col == cols() - 1))
 	{
-		return BOTTOM_RIGHT;
+		return NODETYPE_BOTTOM_RIGHT;
 	}
 	else if ((row == rows() - 1) && (col == 0))
 	{
-		return TOP_LEFT;
+		return NODETYPE_TOP_LEFT;
 	}
 	else if ((row == rows() - 1) && (col > 0) && (col < cols() - 1))
 	{
-		return TOP;
+		return NODETYPE_TOP;
 	}
 	else if ((row == rows() - 1) && (col == cols() - 1))
 	{
-		return TOP_RIGHT;
+		return NODETYPE_TOP_RIGHT;
 	}
 	else if ((row > 0) && (row < rows() - 1) && (col == cols() - 1))
 	{
-		return RIGHT;
+		return NODETYPE_RIGHT;
 	}
 	else if ( (row > 0) && (row < rows() - 1) && (col == 0) )
 	{
-		return LEFT;
+		return NODETYPE_LEFT;
 	}
 	else
 	{
 		assert(false);
+		return NODETYPE_INVALID;
 	}
 }
 

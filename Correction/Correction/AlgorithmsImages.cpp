@@ -151,6 +151,10 @@ void AlgorithmsImages::createVisualImageBlocks(const cv::Mat& cvImage, int block
 void AlgorithmsImages::sumIntensityVertically(const cv::Mat& cvImage, std::vector<double>& sums)
 {
 	assert(!cvImage.empty());
+	if (cvImage.empty())
+	{
+		return;
+	}
 	sums.resize(cvImage.cols);
 	std::vector<double>sumsVector;
 	sumsVector.assign(cvImage.cols, 0);
@@ -168,6 +172,10 @@ void AlgorithmsImages::sumIntensityVertically(const cv::Mat& cvImage, std::vecto
 void AlgorithmsImages::sumIntensityHorizontally(const cv::Mat& cvImage,  std::vector<double>& sums)
 {
 	assert(!cvImage.empty());
+	if (cvImage.empty())
+	{
+		return;
+	}
 	sums.resize(cvImage.rows);
 	std::vector<double>sumsVector;
 	sumsVector.assign(cvImage.rows, 0);
@@ -245,52 +253,52 @@ void AlgorithmsImages::generateMask(const cv::Size& sizeImage, const cv::Size& s
 	cv::Mat blockBottomRight = cv::Mat(mask, cv::Rect(sizeBlockEmpty.width + c_width_line, sizeBlockEmpty.height + c_height_line, sizeBlockEmpty.width, sizeBlockEmpty.height));
 	switch (nodeType)
 	{
-	case CENTER:
+	case NODETYPE_CENTER:
 		blockCenter = cv::Scalar(255);
 		blockLeft = cv::Scalar(255);
 		blockRight = cv::Scalar(255);
 		blockTop = cv::Scalar(255);
 		blockBottom = cv::Scalar(255);
 		break;
-	case TOP_LEFT:
+	case NODETYPE_TOP_LEFT:
 		blockCenter = cv::Scalar(255);
 		blockRight = cv::Scalar(255);
 		blockBottom = cv::Scalar(255);
 		break;
-	case TOP_RIGHT:
+	case NODETYPE_TOP_RIGHT:
 		blockCenter = cv::Scalar(255);
 		blockLeft = cv::Scalar(255);
 		blockBottom = cv::Scalar(255);
 		break;
-	case BOTTOM_LEFT:
+	case NODETYPE_BOTTOM_LEFT:
 		blockCenter = cv::Scalar(255);
 		blockRight = cv::Scalar(255);
 		blockTop = cv::Scalar(255);
 		break;
-	case BOTTOM_RIGHT:
+	case NODETYPE_BOTTOM_RIGHT:
 		blockCenter = cv::Scalar(255);
 		blockLeft = cv::Scalar(255);
 		blockTop = cv::Scalar(255);
 		break;
-	case LEFT:
+	case NODETYPE_LEFT:
 		blockCenter = cv::Scalar(255);
 		blockRight = cv::Scalar(255);
 		blockTop = cv::Scalar(255);
 		blockBottom = cv::Scalar(255);
 		break;
-	case TOP:
+	case NODETYPE_TOP:
 		blockCenter = cv::Scalar(255);
 		blockLeft = cv::Scalar(255);
 		blockRight = cv::Scalar(255);
 		blockBottom = cv::Scalar(255);
 		break;
-	case RIGHT:
+	case NODETYPE_RIGHT:
 		blockCenter = cv::Scalar(255);
 		blockLeft = cv::Scalar(255);
 		blockTop = cv::Scalar(255);
 		blockBottom = cv::Scalar(255);
 		break;
-	case BOTTOM:
+	case NODETYPE_BOTTOM:
 		blockCenter = cv::Scalar(255);
 		blockLeft = cv::Scalar(255);
 		blockRight = cv::Scalar(255);
@@ -360,34 +368,34 @@ void AlgorithmsImages::clearExtraLines(const Parall_m& parallVertical, const Par
 {
 	switch (nodeType)
 	{
-	case CENTER:
+	case NODETYPE_CENTER:
 		break;
-	case TOP_LEFT:
+	case NODETYPE_TOP_LEFT:
 		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_TOP, mask);
 		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_LEFT, mask);
 		break;
-	case TOP_RIGHT:
+	case NODETYPE_TOP_RIGHT:
 		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_TOP, mask);
 		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_RIGHT, mask);
 		break;
-	case BOTTOM_LEFT:
+	case NODETYPE_BOTTOM_LEFT:
 		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_BOTTOM, mask);
 		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_LEFT, mask);
 		break;
-	case BOTTOM_RIGHT:
+	case NODETYPE_BOTTOM_RIGHT:
 		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_BOTTOM, mask);
 		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_RIGHT, mask);
 		break;
-	case LEFT:
+	case NODETYPE_LEFT:
 		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_LEFT, mask);
 		break;
-	case TOP:
+	case NODETYPE_TOP:
 		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_TOP, mask);
 		break;
-	case RIGHT:
+	case NODETYPE_RIGHT:
 		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_RIGHT, mask);
 		break;
-	case BOTTOM:
+	case NODETYPE_BOTTOM:
 		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_BOTTOM, mask);
 		break;
 	default:

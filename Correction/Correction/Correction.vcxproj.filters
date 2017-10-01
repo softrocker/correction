@@ -15,15 +15,10 @@
       <ParseFiles>false</ParseFiles>
     </Filter>
     <Filter Include="Generated Files">
-      <UniqueIdentifier>{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}</UniqueIdentifier>
-      <Extensions>moc;h;cpp</Extensions>
-      <ParseFiles>true</ParseFiles>
-    </Filter>
-    <Filter Include="Generated Files\Debug">
-      <UniqueIdentifier>{28ef27fd-92be-4e14-9237-4bbd17444956}</UniqueIdentifier>
+      <UniqueIdentifier>{8095036f-9174-4cbf-9b77-7a33661fd767}</UniqueIdentifier>
     </Filter>
     <Filter Include="Generated Files\Release">
-      <UniqueIdentifier>{1d7674ed-19c9-45b9-b6fd-4443b6f344d6}</UniqueIdentifier>
+      <UniqueIdentifier>{b33b54ae-e6c1-4c11-a56d-52ba0b372fb3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -34,40 +29,28 @@
     <ClCompile Include="MainWindow.cpp" />
     <ClCompile Include="AlgorithmsCalculus.cpp" />
     <ClCompile Include="NodesSet.cpp" />
-    <ClCompile Include="GeneratedFiles\Debug\moc_Controller.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_Model.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
     <ClCompile Include="Controller.cpp" />
     <ClCompile Include="Model.cpp" />
-    <ClCompile Include="GeneratedFiles\Debug\moc_GraphicsScene.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_GraphicsView.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
     <ClCompile Include="ParametersWidget.cpp" />
-    <ClCompile Include="GeneratedFiles\Debug\moc_ParametersWidget.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_ParametersWidget.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_MainWindow.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_MainWindow.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
     <ClCompile Include="AlgorithmsImages.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GeneratedFiles\Release\moc_Controller.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_GraphicsScene.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_MainWindow.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
     <ClCompile Include="GeneratedFiles\Release\moc_Model.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_ParametersWidget.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_GraphicsView.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
   </ItemGroup>

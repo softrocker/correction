@@ -35,6 +35,7 @@ private:
 	void createLayouts();
 	void createViewsAndScenes();
 	void setMousePos(const QPointF& pos);
+	void nodeSelected(int row, int col);
 	void loadSettings();
 	void saveSettings();
 	void applyParameters();
@@ -60,12 +61,16 @@ private:
 
 	QLabel* labelX_;
 	QLabel* labelY_;
+	QLabel* labelNodeRow_;
+	QLabel* labelNodeCol_;
 
 	QProgressBar* progressBar_;
 
 	ParametersWidget* parametersWidget_;
 
 	Parameters params_;
+
+	QThread* threadWork_;
 };
 
 #endif 

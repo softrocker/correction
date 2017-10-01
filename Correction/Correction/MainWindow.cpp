@@ -9,6 +9,7 @@
 #include <QLabel>
 #include <QSettings>
 #include <QProgressBar>
+#include <QThread>
 
 #include <iostream>
 #include <string>
@@ -28,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
 	
 	createViewsAndScenes();
-	model_ = new Model(this);
+	model_ = new Model();
 	controller_ = new Controller(model_, scene_);
 	createSettings();
 	createActions();
@@ -36,13 +37,19 @@ MainWindow::MainWindow(QWidget *parent)
 	createLayouts();
 	loadSettings();
 
-	connect(view_, &GraphicsView::mouseMoveS, this, &MainWindow::setMousePos);
+	connect(controller_, &Controller::mousePosChangedS, this, &MainWindow::setMousePos);
+	connect(controller_, &Controller::nodeSelectedS, this, &MainWindow::nodeSelected);
 	connect(this, &MainWindow::applySettingsS, parametersWidget_, &ParametersWidget::setParameters);
 	connect(parametersWidget_, &ParametersWidget::parametersChangedS, this, &MainWindow::setParameters);
 	connect(controller_, &Controller::sendProgressS, this, &MainWindow::setProgress);
 	//connect(this, &MainWindow::close, this, [&]() { saveSettings(); return true; });
 
 	applyParameters();
+
+	threadWork_ = new QThread(this);
+	connect(this, &MainWindow::destroyed, threadWork_, &QThread::quit);
+	model_->moveToThread(threadWork_);
+	threadWork_->start();
 }
 
 MainWindow::~MainWindow()
@@ -74,7 +81,7 @@ void MainWindow::createActions()
 		QVariantList operationParams;
 		operationParams.push_back(params_.gridRows);
 		operationParams.push_back(params_.gridCols);
-		controller_->doOperation(OPERATION_FIND_NODES_APPROX, operationParams);
+		controller_->doOperationS(OPERATION_FIND_NODES_APPROX, operationParams);
 	});
 
 	actionFindNodesAccurately_ = new QAction(tr("&Find nodes accurately"), this);
@@ -85,12 +92,12 @@ void MainWindow::createActions()
 		QVariantList operationParams;
 		operationParams.push_back(params_.gridRows);
 		operationParams.push_back(params_.gridCols);
-		controller_->doOperation(OPERATION_FIND_NODES_ACCURATE, operationParams);
+		controller_->doOperationS(OPERATION_FIND_NODES_ACCURATE, operationParams);
 	});
 
 	actionWriteTable_ = new QAction(tr("&Write correction table"), this);
 	actionWriteTable_->setStatusTip(tr("Write correction table"));
-	connect(actionWriteTable_, &QAction::triggered, controller_, [&](bool checked) {controller_->doOperation(OPERATION_WRITE_CORRECTION_TABLE, QVariantList()); });
+	connect(actionWriteTable_, &QAction::triggered, controller_, [&](bool checked) {controller_->doOperationS(OPERATION_WRITE_CORRECTION_TABLE, QVariantList()); });
 
 	actionTest_ = new QAction(tr("&Test"), this);
 	connect(actionTest_, &QAction::triggered, this, &MainWindow::test);
@@ -101,7 +108,8 @@ void::MainWindow::createViewsAndScenes()
 {
 	scene_ = new GraphicsScene(this);
 	view_ = new GraphicsView(scene_);
-	//view_->setDragMode(QGraphicsView::ScrollHandDrag);
+	view_->setDragMode(QGraphicsView::ScrollHandDrag);
+	connect(view_, &GraphicsView::scaleS, scene_, &GraphicsScene::setScale);
 }
 
 void MainWindow::createLayouts()
@@ -124,6 +132,18 @@ void MainWindow::createLayouts()
 	labelY_ = new QLabel(this);
 	labelY_->setFixedWidth(100);
 	coordinatesLayout->addWidget(labelY_);
+
+	labelNodeCol_ = new QLabel(this);
+	labelNodeCol_->setFixedWidth(70);
+	coordinatesLayout->addWidget(labelNodeCol_);
+
+	labelNodeRow_ = new QLabel(this);
+	labelNodeRow_->setFixedWidth(70);
+	coordinatesLayout->addWidget(labelNodeRow_);
+
+
+	QLabel* labelOperationProgress = new QLabel(tr("Operation progress: "), this);
+	coordinatesLayout->addWidget(labelOperationProgress);
 
 	progressBar_ = new QProgressBar(this);
 	progressBar_->setFixedWidth(200);
@@ -156,6 +176,12 @@ void MainWindow::setMousePos(const QPointF& pos)
 {
 	labelX_->setText("x = " + QString().setNum(pos.x(), 'f', 3));
 	labelY_->setText("y = " + QString().setNum(pos.y(), 'f', 3));
+}
+
+void MainWindow::nodeSelected(int row, int col)
+{
+	labelNodeRow_->setText("Row = " + QString().setNum(row));
+	labelNodeCol_->setText("Col = " + QString().setNum(col));
 }
 
 void MainWindow::loadSettings()

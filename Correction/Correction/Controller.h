@@ -21,12 +21,14 @@ public:
 	//void findNodesApproximately(int rows_count, int cols_count);
 	//void findNodesAccurately(int rows_count, int cols_count);
 	//void calculateCorrectionTable();
-	void doOperation(Operation operation, const QVariantList& params);
+	//void doOperation(const Operation& operation, const QVariantList& params);
 signals:
+	void mousePosChangedS(const QPointF& pos);
 	void sendProgressS(int progressPercents);
+	void nodeSelectedS(int row, int col);
 private:
 	signals:
-	void doOperationS(Operation operation, const QVariantList& params);
+	void doOperationS(const Operation& operation, const QVariantList& params);
 
 private:
 	GraphicsScene* scene_;

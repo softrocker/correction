@@ -6,6 +6,7 @@
 #include "AlgorithmsImages.h"
 
 #include <opencv2/highgui/highgui.hpp>
+//#include <QPointF>
 
 
 Controller::Controller(Model* model, GraphicsScene* scene)
@@ -13,9 +14,21 @@ Controller::Controller(Model* model, GraphicsScene* scene)
 	model_ = model;
 	scene_ = scene;
 	connect(scene, &GraphicsScene::nodePosChangedS, model, &Model::setNodePosition);
+	connect(scene, &GraphicsScene::mousePosChangedS, this, &Controller::mousePosChangedS);
 	connect(model, &Model::sendProgressS, this, &Controller::sendProgressS);
-	connect(model, &Model::operationfinishedS, this, [&] {sendProgressS(0); });
-	connect(this, &Controller::doOperationS, model, &Model::doOperation);
+	connect(model, &Model::operationfinishedS, this, [=] {sendProgressS(0); });
+	connect(model, &Model::updateVisualizationS, this, [=] {scene->addNodesItems(model_->getNodesVisual()); });
+
+	qRegisterMetaType<Operation>("Operation");
+	connect(this, &Controller::doOperationS, model, &Model::doOperation); // operations in model work in separate thread
+	connect(scene, &GraphicsScene::nodeSelectedS, 
+		[=] (int indexNode)
+	{ 
+		int row(-1);
+		int col(-1);
+		model->getRowColByIndex(indexNode, row, col);
+		emit nodeSelectedS(row, col);
+	});
 }
 
 Controller::~Controller()
@@ -61,26 +74,26 @@ void Controller::createVisualImageBlocks(const cv::Mat& cvImage, ImageDisplay& i
 //	emit doOperationS(OPERATION_WRITE_CORRECTION_TABLE);
 //}
 
-void Controller::doOperation(Operation operation, const QVariantList& params)
-{
-	switch (operation)
-	{
-
-	case OPERATION_FIND_NODES_APPROX:
-
-		emit doOperationS(OPERATION_FIND_NODES_APPROX, params);
-		scene_->addNodesItems(model_->getNodesVisual());
-		break;
-
-	case OPERATION_FIND_NODES_ACCURATE:
-		emit doOperationS(OPERATION_FIND_NODES_ACCURATE, params);
-		scene_->addNodesItems(model_->getNodesVisual());
-		break;
-
-	case OPERATION_WRITE_CORRECTION_TABLE:
-		emit doOperationS(OPERATION_WRITE_CORRECTION_TABLE, params);
-		break;
-	default:
-		break;
-	}
-}
+//void Controller::doOperation(const Operation& operation, const QVariantList& params)
+//{
+//	switch (operation)
+//	{
+//
+//	case OPERATION_FIND_NODES_APPROX:
+//
+//		emit doOperationS(OPERATION_FIND_NODES_APPROX, params);
+//	//	scene_->addNodesItems(model_->getNodesVisual());
+//		break;
+//
+//	case OPERATION_FIND_NODES_ACCURATE:
+//		emit doOperationS(OPERATION_FIND_NODES_ACCURATE, params);
+//		//scene_->addNodesItems(model_->getNodesVisual());
+//		break;
+//
+//	case OPERATION_WRITE_CORRECTION_TABLE:
+//		emit doOperationS(OPERATION_WRITE_CORRECTION_TABLE, params);
+//		break;
+//	default:
+//		break;
+//	}
+//}

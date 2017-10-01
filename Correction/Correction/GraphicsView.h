@@ -14,9 +14,12 @@ public:
 	explicit GraphicsView (QWidget* parent = 0);
 	explicit GraphicsView (QGraphicsScene* scene, QWidget* parent = 0);
 signals:
+	void scaleS(double scaleFactor);
 	void mouseMoveS(const QPointF& point);
+	
+	
 protected:
-    void wheelEvent(QWheelEvent* event);
+   virtual void wheelEvent(QWheelEvent* event);
 	//void mouseMoveEvent(QMouseEvent *event);
 };
 

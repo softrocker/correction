@@ -49,7 +49,7 @@ void Model::findNodesApproximately(int rows, int cols)
 		return;
 	}
 
-	clarifyNodes0(cvImage_, nodesSet_,  rows,  cols);
+	clarifyNodes0(cvImage_, nodesSet_, rows, cols);
 	clarifyNodes1(cvImage_, nodesSet_);
 	clarifyNodes2(cvImage_, nodesSet_);
 }
@@ -122,9 +122,9 @@ void Model::clarifyNodes1(const cv::Mat& cvImage, NodesSet& nodesSet)
 		{
 			cv::Point pNew = cv::Point(nodesSet.at(row, col).x, peaks[row]);
 			cv::Point pOld = nodesSet.at(row, col);
-			nodesSet.setNode(row, col, pNew);	
+			nodesSet.setNode(row, col, pNew);
 		}
-		
+
 		int progressInPercents = 100 * col / nodesSet_.cols();
 		emit sendProgressS(progressInPercents);
 	}
@@ -166,6 +166,7 @@ void Model::clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet)
 		}
 	}
 	emit operationfinishedS();
+	emit updateVisualizationS();
 }
 
 void Model::findNodesAccurately(int rows, int cols)
@@ -209,7 +210,7 @@ void Model::findNodesAccurately(int rows, int cols)
 			cv::matchTemplate(cvSubImage, mask, corrMatrix, cv::TM_CCORR_NORMED);
 			double minVal; double maxVal; cv::Point minLoc; cv::Point maxLoc;
 			cv::minMaxLoc(corrMatrix, &minVal, &maxVal, &minLoc, &maxLoc);
-			cv::Point nodeNew = roiCorrected.tl() + maxLoc + cv::Point(mask.cols/2, mask.rows/2);
+			cv::Point nodeNew = roiCorrected.tl() + maxLoc + cv::Point(mask.cols / 2, mask.rows / 2);
 			node = nodeNew;
 
 			int nodesCount = nodesSet_.rows() * nodesSet_.cols();
@@ -218,6 +219,7 @@ void Model::findNodesAccurately(int rows, int cols)
 		}
 	}
 	emit operationfinishedS();
+	emit updateVisualizationS();
 }
 
 void Model::calculateCorrectionTable(std::vector<double>& correctionTable)
@@ -316,7 +318,7 @@ bool Model::valid()
 	return (!cvImage_.empty() && !nodesSet_.empty());
 }
 
-void Model::doOperation(Operation operation, const QVariantList& operationParameters)
+void Model::doOperation(const Operation& operation, const QVariantList& operationParameters)
 {
 	std::vector<double> correctionValues;
 	int rows_count(-1);
@@ -324,7 +326,7 @@ void Model::doOperation(Operation operation, const QVariantList& operationParame
 
 	switch (operation)
 	{
-		
+
 	case OPERATION_FIND_NODES_APPROX:
 		assert(operationParameters.size() == 2);
 		if (operationParameters.size() != 2)
@@ -348,7 +350,7 @@ void Model::doOperation(Operation operation, const QVariantList& operationParame
 		break;
 
 	case OPERATION_WRITE_CORRECTION_TABLE:
-		
+
 		calculateCorrectionTable(correctionValues);
 		break;
 
@@ -374,7 +376,7 @@ cv::Matx<double, 3, 3> getScansTrans(const NodesSet& nodesSet, const cv::Point& 
 	const int c_rows_count = nodesSet.rows();
 
 	double ds = 0x7fffffff;
-	
+
 	ds /= (c_cols_count / 2);
 
 	int ox = c_cols_count / 2, oy = c_rows_count / 2;
@@ -396,25 +398,25 @@ cv::Matx<double, 3, 3> getScansTrans(const NodesSet& nodesSet, const cv::Point& 
 			rx[0] += ov[0] * x, rx[1] += ov[0] * y/*, rx.z += ov.x * xy*/;
 			ry[0] += ov[1] * x, ry[1] += ov[1] * y/*, ry.z += ov.y * xy*/;
 
-			mx(0,0) += x2;
-			mx(0,1) += xy;
-			mx(1,1) += y2;
+			mx(0, 0) += x2;
+			mx(0, 1) += xy;
+			mx(1, 1) += y2;
 		}
 	}
 	mx(1, 0) = mx(0, 1);//[0][1];
 	mx(2, 0) = mx(0, 2);// mx[2][0] = mx[0][2],
 	mx(2, 1) = mx(1, 2);// mx[2][1] = mx[1][2];
 	mx(2, 2) = 1.0; // mx[2][2] = 1.0;
-	
-	if (cv::invert(mx, mx)) 
+
+	if (cv::invert(mx, mx))
 	{
 		rx = mx * rx;
 		ry = mx * ry;
 	}
 
 	mx(0, 0) = rx[0], mx(0, 1) = rx[1], mx(0, 2) = origin.x; //mx[0][0] = rx.x, mx[0][1] = rx.y, mx[0][2] = or .x;
-	mx(1,0) = ry[0], mx(1,1) = ry[1], mx(1,2) = origin.y;//mx[1][0] = ry.x, mx[1][1] = ry.y, mx[1][2] = or .y;
-	mx(2,0) = 0, mx(2,1) = 0, mx(2,2) = 1; //mx[2][0] = 0, mx[2][1] = 0, mx[2][2] = 1;
+	mx(1, 0) = ry[0], mx(1, 1) = ry[1], mx(1, 2) = origin.y;//mx[1][0] = ry.x, mx[1][1] = ry.y, mx[1][2] = or .y;
+	mx(2, 0) = 0, mx(2, 1) = 0, mx(2, 2) = 1; //mx[2][0] = 0, mx[2][1] = 0, mx[2][2] = 1;
 
 	return mx;
 }

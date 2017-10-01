@@ -18,14 +18,16 @@ GraphicsView::GraphicsView(QGraphicsScene* scene, QWidget* parent) :
 void GraphicsView::wheelEvent(QWheelEvent *event)
 {
     const double scaleFactor = 1.2;
-    if(event->delta() > 0)
-        scale(scaleFactor, scaleFactor);
-    else
-        scale(1.0 / scaleFactor, 1.0 / scaleFactor);
+	double scaleFactorNew = 0;
+	if (event->delta() > 0)
+	{
+		scaleFactorNew = scaleFactor;
+	}
+	else 
+	{
+		scaleFactorNew = 1.0 / scaleFactor;
+	}
+    scale(scaleFactorNew, scaleFactorNew);
+
+	scaleS(scaleFactorNew);
 }
-
-
-//void GraphicsView::mouseMoveEvent(QMouseEvent *event)
-//{
-//	emit mouseMoveS(mapToScene(event->pos()));
-//}

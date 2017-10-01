@@ -15,12 +15,13 @@ enum Operation
 	OPERATION_FIND_NODES_ACCURATE = 1,
 	OPERATION_WRITE_CORRECTION_TABLE = 2
 };
+Q_DECLARE_METATYPE(Operation)
 
 class Model : public QObject
 {
 	Q_OBJECT
 public:
-	Model(QObject* parent);
+	explicit Model(QObject* parent = 0);
 	~Model();
 	void setImage(const cv::Mat& cvImage); //void readImage(const std::string& filename);
 
@@ -40,14 +41,16 @@ public:
 
 	bool valid();
 
-	void doOperation(Operation operation, const QVariantList& operationParameters);
+	void doOperation(const Operation& operation, const QVariantList& operationParameters);
+	void getRowColByIndex(int index, int& row, int& col);
 
 signals:
+	void updateVisualizationS();
 	void sendProgressS(int progressInPercents);
 	void operationfinishedS();
 
 private:
-	void getRowColByIndex(int index, int& row, int& col);
+	
 private:
 	
 	cv::Mat cvImage_;
@@ -55,4 +58,9 @@ private:
 	cv::Point nodeCur_; // special variable for testing
 	int indexCur_; // also variable for testing
 	//std::vector<cv::Point> nodes_;
+};
+
+class Worker : public QObject
+{
+
 };
