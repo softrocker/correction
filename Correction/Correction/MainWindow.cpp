@@ -30,6 +30,10 @@ MainWindow::MainWindow(QWidget *parent)
 	
 	createViewsAndScenes();
 	model_ = new Model();
+	threadWork_ = new QThread(this);
+	connect(this, &MainWindow::destroyed, threadWork_, &QThread::quit);
+	model_->moveToThread(threadWork_);
+	threadWork_->start();
 	controller_ = new Controller(model_, scene_);
 	createSettings();
 	createActions();
@@ -42,14 +46,10 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(this, &MainWindow::applySettingsS, parametersWidget_, &ParametersWidget::setParameters);
 	connect(parametersWidget_, &ParametersWidget::parametersChangedS, this, &MainWindow::setParameters);
 	connect(controller_, &Controller::sendProgressS, this, &MainWindow::setProgress);
-	//connect(this, &MainWindow::close, this, [&]() { saveSettings(); return true; });
 
 	applyParameters();
 
-	threadWork_ = new QThread(this);
-	connect(this, &MainWindow::destroyed, threadWork_, &QThread::quit);
-	model_->moveToThread(threadWork_);
-	threadWork_->start();
+	
 }
 
 MainWindow::~MainWindow()
@@ -92,12 +92,40 @@ void MainWindow::createActions()
 		QVariantList operationParams;
 		operationParams.push_back(params_.gridRows);
 		operationParams.push_back(params_.gridCols);
+		operationParams.push_back(params_.cellSizeFactor);
 		controller_->doOperationS(OPERATION_FIND_NODES_ACCURATE, operationParams);
 	});
 
-	actionWriteTable_ = new QAction(tr("&Write correction table"), this);
-	actionWriteTable_->setStatusTip(tr("Write correction table"));
-	connect(actionWriteTable_, &QAction::triggered, controller_, [&](bool checked) {controller_->doOperationS(OPERATION_WRITE_CORRECTION_TABLE, QVariantList()); });
+	actionFindSingleNodeAccurately_ = new QAction(tr("Find single node accurately"), this);
+	actionFindSingleNodeAccurately_->setStatusTip(tr("Find single node accurately"));
+	connect(actionFindSingleNodeAccurately_, &QAction::triggered, controller_,
+		[&](bool checked)
+	{
+		QVariantList operationParams; // empty parameters list
+		operationParams.push_back(params_.cellSizeFactor);
+		controller_->doOperationS(OPERATION_FIND_SINGLE_NODE_ACCURATE, operationParams);
+	});
+
+
+
+	actionIter0_ = new QAction(tr("Itetation 0"), this);
+	actionIter1_ = new QAction(tr("Itetation 1"), this);
+
+	connect(actionIter0_, &QAction::triggered, controller_,
+		[&](bool checked)
+	{
+		QVariantList operationParams;
+		operationParams.push_back(0);
+		controller_->doOperationS(OPERATION_WRITE_CORRECTION_TABLE, operationParams);
+	});
+
+	connect(actionIter1_, &QAction::triggered, controller_,
+		[&](bool checked)
+	{
+		QVariantList operationParams;
+		operationParams.push_back(1);
+		controller_->doOperationS(OPERATION_WRITE_CORRECTION_TABLE, operationParams);
+	});
 
 	actionTest_ = new QAction(tr("&Test"), this);
 	connect(actionTest_, &QAction::triggered, this, &MainWindow::test);
@@ -164,11 +192,18 @@ void MainWindow::createMenu()
 	menuMain->addAction(actionLoadImage_);
 	menuMain->addAction(actionExit_);
 
+	menuWriteTable_ = new QMenu(tr("&Write correction table"), this);
+	menuWriteTable_->setStatusTip(tr("Write correction table"));
+	menuWriteTable_->addAction(actionIter0_);
+	menuWriteTable_->addAction(actionIter1_);
+
 	QMenu* menuOperations = menuBar()->addMenu(tr("Operations"));
 	menuOperations->addAction(actionFindNodexApprox_);
 	menuOperations->addAction(actionFindNodesAccurately_);
-	menuOperations->addAction(actionWriteTable_);
+	menuOperations->addAction(actionFindSingleNodeAccurately_);
+	menuOperations->addMenu(menuWriteTable_);
 	menuOperations->addAction(actionTest_);
+	
 	//actionTest_->setVisible(false);
 }
 
@@ -195,6 +230,10 @@ void MainWindow::loadSettings()
 	{
 		params_.gridRows = settings.value("grid_rows").toInt();
 	}
+	if (settings.contains("cell_size_factor"))
+	{
+		params_.cellSizeFactor = settings.value("cell_size_factor").toDouble();
+	}
 }
 
 void MainWindow::saveSettings()
@@ -202,6 +241,7 @@ void MainWindow::saveSettings()
 	QSettings settings("settings", QSettings::IniFormat);
 	settings.setValue("grid_cols", params_.gridCols);
 	settings.setValue("grid_rows", params_.gridRows);
+	settings.setValue("cell_size_factor", params_.cellSizeFactor);
 }
 
 void MainWindow::applyParameters()

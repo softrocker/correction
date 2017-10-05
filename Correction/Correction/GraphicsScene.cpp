@@ -51,7 +51,7 @@ void GraphicsScene::addNodesItems(const QVector<QPoint>& nodesPositions)
 	for (int i = 0; i < nodesPositions.size(); i++)
 	{
 		QGraphicsEllipseItem* nodeItem = addEllipse(QRect(nodesPositions[i].x()-5, nodesPositions[i].y()-5, 10, 10), QPen(QColor(255, 0, 0)), QBrush(QColor(255, 0, 0)));
-		addItem(nodeItem);
+		//addItem(nodeItem);
 		nodeItem->setTransformOriginPoint(nodeItem->rect().center());
 		nodeItem->setScale(scale_);
 		nodesItems_.push_back(nodeItem);

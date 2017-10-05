@@ -56,7 +56,10 @@ private:
 
 	QAction* actionFindNodexApprox_;
 	QAction* actionFindNodesAccurately_;
-	QAction* actionWriteTable_;
+	QAction* actionFindSingleNodeAccurately_;
+	QMenu* menuWriteTable_;
+	QAction* actionIter0_;
+	QAction* actionIter1_;
 	QAction* actionTest_;
 
 	QLabel* labelX_;

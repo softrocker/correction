@@ -7,6 +7,7 @@
 #include "AlgorithmsCalculus.h"
 #include "DataTransfer.h"
 #include "Parameters.h"
+#include <fstream>
 
 #include <QMessageBox>
 #include <QVariantList>
@@ -16,10 +17,9 @@
 
 cv::Matx<double, 3, 3> getScansTrans(const NodesSet& nodesSet, const cv::Point& origin);
 
-
 Model::Model(QObject* parent) : QObject(parent)
 {
-	nodeCur_ = cv::Point(INT_MIN, INT_MIN);
+	//nodeCur_ = cv::Point(INT_MIN, INT_MIN);
 	indexCur_ = INT_MIN;
 }
 
@@ -32,14 +32,6 @@ void Model::setImage(const cv::Mat& cvImage)
 {
 	cvImage_ = cvImage;
 }
-
-//void Model::readImage(const std::string& filename)
-//{
-//	cv::Mat a = cv::imread(filename, CV_LOAD_IMAGE_GRAYSCALE); // for testing
-//	std::swap(cvImage_, a);
-//}
-
-
 
 void Model::findNodesApproximately(int rows, int cols)
 {
@@ -169,49 +161,18 @@ void Model::clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet)
 	emit updateVisualizationS();
 }
 
-void Model::findNodesAccurately(int rows, int cols)
+void Model::findNodesAccurately(int rows, int cols, double cellSizeFactor)
 {
 	if (!valid())
 	{
 		return;
 	}
-	cv::Size sizeImage = nodesSet_.getCellSize() / 2;
 
 	for (int row = 0; row < nodesSet_.rows(); row++)
 	{
 		for (int col = 0; col < nodesSet_.cols(); col++)
 		{
-			cv::Point& node = nodesSet_.at(row, col);
-			cv::Rect roiCorrected;
-			AlgorithmsImages::getNodeSubImageROI(cvImage_, sizeImage, node, roiCorrected);
-			cv::Size sizeLine;
-			cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected);
-
-			double angle = nodesSet_.getAngle(row, col, -1);
-
-			//find line thickness for sloped horizontal line:
-			std::vector<double> sumsSloped;
-			AlgorithmsImages::sumIntensityHorizontallyWithSlope(cvSubImage, angle, sumsSloped);
-			int thicknessLineSloped = -1;
-			AlgorithmsImages::getLineThickness(sumsSloped, thicknessLineSloped);
-
-			//find line thickness for vertical line:
-			std::vector<double> sumsX;
-			AlgorithmsImages::sumIntensityVertically(cvSubImage, sumsX);
-			int thicknessLineVertical = -1;
-			AlgorithmsImages::getLineThickness(sumsX, thicknessLineVertical);
-
-			//create mask with angle:
-			NodeType nodeType = nodesSet_.getNodeType(row, col);
-			cv::Mat mask;
-			AlgorithmsImages::generateMaskWithAngle(sizeImage / 2, cv::Size(thicknessLineVertical, thicknessLineSloped), angle, nodeType, mask);
-			cv::Mat corrMatrix;
-
-			cv::matchTemplate(cvSubImage, mask, corrMatrix, cv::TM_CCORR_NORMED);
-			double minVal; double maxVal; cv::Point minLoc; cv::Point maxLoc;
-			cv::minMaxLoc(corrMatrix, &minVal, &maxVal, &minLoc, &maxLoc);
-			cv::Point nodeNew = roiCorrected.tl() + maxLoc + cv::Point(mask.cols / 2, mask.rows / 2);
-			node = nodeNew;
+			findSingleNodeAccurately(row, col, cellSizeFactor);
 
 			int nodesCount = nodesSet_.rows() * nodesSet_.cols();
 			int progressInPercents = 100 * (row * nodesSet_.cols() + col) / nodesCount;
@@ -222,32 +183,152 @@ void Model::findNodesAccurately(int rows, int cols)
 	emit updateVisualizationS();
 }
 
-void Model::calculateCorrectionTable(std::vector<double>& correctionTable)
+void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, bool nodeSelected)
 {
-	assert(!nodesSet_.empty());
-	/* calculate parameters of ideal grid: */
-	// calculate origin of ideal grid:
+	int row_local = row;
+	int col_local = col;
+
+	if (nodeSelected)
+	{
+		assert(indexCur_ != INT_MIN);
+		if (indexCur_ == INT_MIN)
+		{
+			return;
+		}
+		getRowColByIndex(indexCur_, row_local, col_local);
+	}
+	
+	double angle = nodesSet_.getAngle(row_local, col_local, -1);
+
+	cv::Point& node = nodesSet_.at(row_local, col_local);
+	cv::Rect roiCorrected;
+	cv::Size sizeCell = nodesSet_.getCellSize();
+	cv::Size sizeSubImage = cv::Size(static_cast<int>(sizeCell.width * cellSizeFactor), static_cast<int>(sizeCell.height * cellSizeFactor));
+	AlgorithmsImages::getNodeSubImageROI(cvImage_, sizeSubImage, node, roiCorrected);
+	cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected);
+	cv::Size sizeSubImageCorrected = cvSubImage.size();
+
+	//find line thickness for sloped horizontal line:
+	std::vector<double> sumsSloped;
+	AlgorithmsImages::sumIntensityHorizontallyWithSlope(cvSubImage, angle, sumsSloped);
+	int thicknessLineSloped = -1;
+	AlgorithmsImages::getLineThickness(sumsSloped, thicknessLineSloped);
+
+	//find line thickness for vertical line:
+	std::vector<double> sumsX;
+	AlgorithmsImages::sumIntensityVertically(cvSubImage, sumsX);
+	int thicknessLineVertical = -1;
+	AlgorithmsImages::getLineThickness(sumsX, thicknessLineVertical);
+
+	//create mask with angle:
+	NodeType nodeType = nodesSet_.getNodeType(row_local, col_local);
+	cv::Mat mask;
+	AlgorithmsImages::generateMaskWithAngle(sizeSubImageCorrected / 3, cv::Size(thicknessLineVertical, thicknessLineSloped), angle, nodeType, mask);
+	cv::Mat corrMatrix;
+
+	int leftExtent, rightExtent, topExtent, bottomExtent;
+	AlgorithmsImages::getImageExtents(cvImage_, sizeSubImage, node, leftExtent, rightExtent, bottomExtent, topExtent);
+	cv::copyMakeBorder(cvSubImage, cvSubImage, topExtent, bottomExtent, leftExtent, rightExtent, cv::BORDER_CONSTANT);
+
+	cv::matchTemplate(cvSubImage, mask, corrMatrix, cv::TM_CCORR_NORMED);
+	double minVal; double maxVal; cv::Point minLoc; cv::Point maxLoc;
+	cv::minMaxLoc(corrMatrix, &minVal, &maxVal, &minLoc, &maxLoc);
+	cv::Point nodeNew = roiCorrected.tl() + cv::Point(-leftExtent, -topExtent) + maxLoc + cv::Point(mask.cols / 2, mask.rows / 2);
+	node = nodeNew;
+
+	if (nodeSelected)
+	{
+		emit updateVisualizationS();
+	}
+	
+}
+
+void Model::calculateCorrectionTable(int iteration)
+{
+	assert(!valid());
+	if (!valid())
+	{
+		return;
+	}
+	// calculate origin of nodes set:
 	const int c_cols = nodesSet_.cols();
 	const int c_rows = nodesSet_.rows();
 	cv::Point nodeTop = nodesSet_.at(c_rows - 2, c_cols / 2);
 	cv::Point nodeBottom = nodesSet_.at(1, c_cols / 2);
 	cv::Point nodeLeft = nodesSet_.at(c_rows / 2, 1);
 	cv::Point nodeRight = nodesSet_.at(c_rows / 2, c_cols - 2);
-	cv::Point originOfIdealGrid = cv::Point((nodeLeft.x + nodeRight.x) / 2, (nodeBottom.y + nodeTop.y) / 2);
+	cv::Point originOfNodesSet = nodesSet_.center(); // cv::Point((nodeLeft.x + nodeRight.x) / 2, (nodeBottom.y + nodeTop.y) / 2);
 
 	//calculate direction of main axis of grid:
-	cv::Vec4f lineOx;
-
 	std::vector<cv::Point> valuesX = nodesSet_.row(c_rows / 2);
-	valuesX.erase(valuesX.end() - 1); // remove first and last elements because their position are too much distorted.
-	valuesX.erase(valuesX.begin());
+	valuesX = std::vector<cv::Point>(valuesX.begin() + 1, valuesX.end() - 1);
+	cv::Vec4d lineOx;
 	cv::fitLine(valuesX, lineOx, CV_DIST_L2, 0, 0.01, 0.01);
+	cv::Vec2d e1 = cv::Vec2d(lineOx[0], lineOx[1]); // unit ort of "x-axis" of nodes-set
+	if (e1[0] < 0)
+	{
+		e1 = -e1;
+	}
 
-	cv::Vec4f lineOy;
 	std::vector<cv::Point> valuesY = nodesSet_.col(c_cols / 2);
-	valuesY.erase(valuesY.end() - 1); // remove first and last elements because their position are too much distorted.
-	valuesY.erase(valuesY.begin());
+	valuesY = std::vector<cv::Point>(valuesY.begin() + 1, valuesY.end() - 1);
+	cv::Vec4d lineOy;
 	cv::fitLine(valuesY, lineOy, CV_DIST_L2, 0, 0.01, 0.01);
+	cv::Vec2d e2 = cv::Vec2d(lineOy[0], lineOy[1]); // unit ort of "y-axis" of nodes-set
+	if (e2[1] > 0)
+	{
+		e2 = -e2;
+	}
+
+	//calculate average size of grid cell:
+	const int c_cell_count_x = c_cols - 3;
+	const int c_cell_count_y = c_rows - 3;
+	const double distHorX =  (nodeRight - nodeLeft).x;
+	const double distHorY = (nodeRight - nodeLeft).y;
+	const double distVertX = (nodeTop - nodeBottom).x;
+	const double distVertY = (nodeTop - nodeBottom).y;
+
+	cv::Size2d cellSize;
+	cellSize.width = sqrt(distHorX * distHorX + distHorY * distHorY) / c_cell_count_x;
+	cellSize.height = sqrt(distVertX * distVertX + distVertY * distVertY) / c_cell_count_y;
+
+	cv::Matx<double, 3, 3> mx = getScansTrans(nodesSet_, originOfNodesSet); // here we already invert this matrix
+	cv::invert(mx, mx); // invert twice -> get initial matrix (?)
+
+	// save data to file:
+	//16-bit:
+	int indexOriginX = c_cols / 2;
+	int indexOriginY = c_rows / 2;
+	std::ofstream outStream16("correct_16.dat");
+	outStream16 << 2 << std::endl << std::endl;
+
+	//32-bit:
+	std::ofstream outStream32("correct_32.dat");
+	outStream32 << 2 << std::endl << std::endl;
+	for (int row = 0; row < c_rows; row++)
+	{
+		for (int col = 0; col < c_cols; col++)
+		{
+			cv::Point shiftFromOriginInt = nodesSet_.at(row, col) - originOfNodesSet;
+			cv::Vec2d shiftFromOrigin = cv::Vec2d(shiftFromOriginInt.x, shiftFromOriginInt.y);
+			cv::Vec2d shift2D = cv::Vec2d((col - indexOriginX) * ( cellSize.width * e1) + (row - indexOriginY) * (cellSize.height * e2)) - shiftFromOrigin;
+			cv::Vec3d shift = cv::Vec3d(shift2D[0], shift2D[1], 0);
+			shift = mx * shift;
+			if (iteration != 0)
+			{
+				if (row == 0 || row == c_rows - 1  || col == 0 || col == c_cols - 1)
+				{
+					shift = 0;
+				}
+			}
+			outStream32 << lround(shift[0]) << ' ' << lround(shift[1]) << std::endl;
+			outStream16 << lround(shift[0] / (1 << 16)) << ' ' << lround(shift[1] / (1 << 16)) << std::endl;
+		}
+		outStream16 << std::endl;
+		outStream32 << std::endl;
+	}
+	/*outStream16 << std::endl;
+	outStream16 << "Origin (pixels): " << originOfNodesSet.x << ' ' << originOfNodesSet.y << std::endl;*/
 
 }
 
@@ -266,14 +347,13 @@ QVector<QPoint> Model::getNodesVisual() const
 
 void Model::test()
 {
-	assert(nodeCur_ != cv::Point(INT_MIN, INT_MIN));
 	assert(indexCur_ != INT_MIN);
-	if (nodeCur_ == cv::Point(INT_MIN, INT_MIN) || indexCur_ == INT_MIN)
+	if ( indexCur_ == INT_MIN)
 	{
 		return;
 	}
 	cv::Size sizeImage = nodesSet_.getCellSize() / 2;
-	cv::Point node = nodeCur_;
+	cv::Point node = nodeCur();
 	cv::Rect roiCorrected;
 	AlgorithmsImages::getNodeSubImageROI(cvImage_, sizeImage, node, roiCorrected);
 	cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected);
@@ -299,7 +379,11 @@ void Model::test()
 	NodeType nodeType = nodesSet_.getNodeType(row, col);
 	cv::Mat mask;
 	AlgorithmsImages::generateMaskWithAngle(sizeImage / 2, cv::Size(thicknessLineVertical, thicknessLineSloped), angle, nodeType, mask);
+	cv::imwrite("image_real.png", cvSubImage);
+	cv::imwrite("image_mask.png", mask);
 }
+
+
 
 void Model::setNodePosition(int index, int posX, int posY)
 {
@@ -307,7 +391,7 @@ void Model::setNodePosition(int index, int posX, int posY)
 	int col = index % nodesSet_.cols();
 	cv::Point node = cv::Point(posX, posY);
 	nodesSet_.setNode(row, col, node);
-	nodeCur_ = node;
+	//nodeCur_ = node;
 	indexCur_ = index;
 }
 
@@ -320,9 +404,10 @@ bool Model::valid()
 
 void Model::doOperation(const Operation& operation, const QVariantList& operationParameters)
 {
-	std::vector<double> correctionValues;
 	int rows_count(-1);
 	int cols_count(-1);
+	int iteration(-1);
+	double cell_size_factor(-1.0);
 
 	switch (operation)
 	{
@@ -339,24 +424,55 @@ void Model::doOperation(const Operation& operation, const QVariantList& operatio
 		break;
 
 	case OPERATION_FIND_NODES_ACCURATE:
-		assert(operationParameters.size() == 2);
-		if (operationParameters.size() != 2)
+		assert(operationParameters.size() == 3);
+		if (operationParameters.size() != 3)
 		{
 			return;
 		}
 		rows_count = operationParameters[0].toInt();
 		cols_count = operationParameters[1].toInt();
-		findNodesAccurately(rows_count, cols_count);
+		cell_size_factor = operationParameters[2].toDouble();
+		findNodesAccurately(rows_count, cols_count, cell_size_factor);
+		break;
+	case OPERATION_FIND_SINGLE_NODE_ACCURATE:
+		assert(operationParameters.size() == 1);
+		if (operationParameters.size() != 1)
+		{
+			return;
+		}
+		cell_size_factor = operationParameters[0].toDouble();
+		findSingleNodeAccurately(-1, -1, cell_size_factor, true);
 		break;
 
 	case OPERATION_WRITE_CORRECTION_TABLE:
+		assert(operationParameters.size() == 1);
+		if (operationParameters.size() != 1)
+		{
+			return;
+		}
+		iteration = operationParameters[0].toInt();
 
-		calculateCorrectionTable(correctionValues);
+		calculateCorrectionTable(iteration);
 		break;
 
 	default:
 		break;
 	}
+}
+
+cv::Point Model::nodeCur()
+{
+	assert(indexCur_ != INT_MIN);
+	if (indexCur_ == INT_MIN)
+	{
+		return cv::Point(INT_MIN, INT_MIN);
+	}
+
+	int row(-1);
+	int col(-1);
+	getRowColByIndex(indexCur_, row, col);
+
+	return nodesSet_.at(row, col);
 }
 
 void Model::getRowColByIndex(int index, int& row, int& col)

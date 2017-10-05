@@ -13,7 +13,8 @@ enum Operation
 {
 	OPERATION_FIND_NODES_APPROX = 0,
 	OPERATION_FIND_NODES_ACCURATE = 1,
-	OPERATION_WRITE_CORRECTION_TABLE = 2
+	OPERATION_FIND_SINGLE_NODE_ACCURATE = 2,
+	OPERATION_WRITE_CORRECTION_TABLE = 3
 };
 Q_DECLARE_METATYPE(Operation)
 
@@ -30,9 +31,10 @@ public:
 	void clarifyNodes1(const cv::Mat& cvImage, NodesSet& nodesSet);
 	void clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet);
 
-	void findNodesAccurately(int rows, int cols);
+	void findNodesAccurately(int rows, int cols, double cellSizeFactor);
 
-	void calculateCorrectionTable(std::vector<double>& correctionTable);
+	void findSingleNodeAccurately(int row, int col, double cellSizeFactor, bool nodeSelected = false); // if nodeSelected == true => node will be equal to nodeCur_ and row and col will be not used
+	void calculateCorrectionTable(int iteration);
 
 	QVector<QPoint> getNodesVisual() const; // <------ not needed method in model, TODO replace.
 	void test();
@@ -42,6 +44,9 @@ public:
 	bool valid();
 
 	void doOperation(const Operation& operation, const QVariantList& operationParameters);
+	
+	cv::Point nodeCur();
+
 	void getRowColByIndex(int index, int& row, int& col);
 
 signals:
@@ -55,7 +60,7 @@ private:
 	
 	cv::Mat cvImage_;
 	NodesSet nodesSet_;
-	cv::Point nodeCur_; // special variable for testing
+	//cv::Point nodeCur_; // special variable for testing
 	int indexCur_; // also variable for testing
 	//std::vector<cv::Point> nodes_;
 };

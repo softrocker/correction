@@ -42,112 +42,6 @@ void AlgorithmsImages::createVisualImageBlocks(const cv::Mat& cvImage, int block
 	
 }
 
-//void AlgorithmsImages::findNodesApproximately(const cv::Mat& cvImage, NodesSet& nodesSet, int grid_rows, int grid_cols)
-//{
-//	assert(!cvImage.empty());
-//	if (cvImage.empty())
-//	{
-//		return;
-//	}
-//	//array of values sums of f(x,y) by y:
-//	std::vector<double> sumsAlongY(cvImage.cols);
-//	sumIntensityVertically(cvImage, sumsAlongY);
-//
-//	//array of values sums of f(x,y) by X:
-//	std::vector<double> sumsAlongX(cvImage.rows);
-//	sumIntensityHorizontally(cvImage, sumsAlongX);
-//
-//	//finding peaks:
-//	std::vector<int> peaksY;
-//	Algorithms::findPeaks(sumsAlongX, grid_rows, c_neighborhood, peaksY);
-//	std::vector<int> peaksX;
-//	Algorithms::findPeaks(sumsAlongY, grid_cols, c_neighborhood, peaksX);
-//
-//	//finding nodes positions using finded peaks:
-//	bool startFromBottom = true;
-//	if (startFromBottom)
-//	{
-//		std::reverse(peaksY.begin(), peaksY.end());
-//	}
-//
-//	std::vector<cv::Point> nodes;
-//	nodes.resize(peaksX.size() * peaksY.size());
-//
-//	for (int row = 0; row < peaksY.size(); row++)
-//	{
-//		for (int col = 0; col < peaksX.size(); col++)
-//		{
-//			nodes[row * peaksX.size() + col] = cv::Point(peaksX[col], peaksY[row]);
-//		}
-//	}
-//
-//	nodesSet.create(nodes, grid_cols, grid_rows);
-//}
-
-//void AlgorithmsImages::clarifyNodes(const cv::Mat& cvImage, NodesSet& nodesSet)
-//{
-//	// get cell size
-//	cv::Size cellSize = nodesSet.getCellSize();
-//
-//	for (int col = 0; col < nodesSet.cols(); col++)
-//	{
-//		// create subimage of size (cellSizeX x cvImage.height) with vertical symmetry line on current column:
-//		int xLeft = std::max(0, (nodesSet.at(0, col).x - cellSize.width / 2));
-//		int xRight = std::min(cvImage.cols - 1, (nodesSet.at(0, col).x + cellSize.width / 2));
-//		cv::Mat cvSubImage = cv::Mat(cvImage, cv::Rect(cv::Point(xLeft, 0), cv::Point(xRight, cvImage.rows - 1)));
-//		
-//		// integrate image along X-axis:
-//		std::vector<double> sums;
-//		sumIntensityHorizontally(cvSubImage,  sums);
-//
-//		//find peaks:
-//		std::vector<int> peaks;
-//		Algorithms::findPeaks(sums, nodesSet.rows(), c_neighborhood, peaks);
-//		std::reverse(peaks.begin(), peaks.end());
-//
-//		// shift each node in column to corresponding peak
-//		for (int row = 0; row < nodesSet.rows(); row++)
-//		{
-//			cv::Point pNew = cv::Point(nodesSet.at(row, col).x, peaks[row]);
-//			cv::Point pOld = nodesSet.at(row, col);
-//			nodesSet.setNode(row, col, pNew);
-//		}
-//	}
-//}
-
-//void AlgorithmsImages::clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet)
-//{
-//	// get cell size
-//	cv::Size cellSize = nodesSet.getCellSize();
-//
-//	for (int row = 0; row < nodesSet.rows(); row++)
-//	{
-//		for (int col = 0; col < nodesSet.cols(); col++)
-//		{
-//			//create cvSubImage of size (cellSizeX x cellSizeY / 4):
-//			cv::Point node = nodesSet.at(row, col);
-//			cv::Size sizeSubImage(cellSize.width, cellSize.height / 4);
-//			cv::Rect roiSubImage;
-//			getNodeSubImageROI(cvImage, sizeSubImage, node, roiSubImage);
-//			cv::Mat cvSubImage = cv::Mat(cvImage, cv::Rect(roiSubImage.tl(), roiSubImage.br()));
-//
-//			//integrate subImage along Y-axis:
-//			std::vector<double> sums;
-//			sumIntensityVertically(cvSubImage,  sums);
-//
-//			//find single peak:
-//			std::vector<int> peaks;
-//			Algorithms::findPeaks(sums, 1, 0, peaks);
-//
-//			//shift node to finded peak:
-//			int nodeXLocal = node.x - roiSubImage.tl().x;
-//			cv::Point pNew = nodesSet.at(row, col) + cv::Point(peaks[0] - nodeXLocal, 0);
-//			nodesSet.setNode(row, col, pNew);
-//		}
-//	}
-//}
-
-
 void AlgorithmsImages::sumIntensityVertically(const cv::Mat& cvImage, std::vector<double>& sums)
 {
 	assert(!cvImage.empty());
@@ -532,4 +426,84 @@ void AlgorithmsImages::getNodeSubImageROI(const cv::Mat& cvImage, const cv::Size
 	int top = std::max(0, node.y - sizeROI.height / 2);
 	int bottom = std::min(cvImage.rows - 1, node.y + sizeROI.height / 2);
 	ROIcorrected = cv::Rect(cv::Point(left, top), cv::Point(right, bottom));
+}
+
+void AlgorithmsImages::getImageExtents(const cv::Mat& cvImage, const cv::Size& sizeROI, const cv::Point& node, int& leftExt, int& rightExt, int& bottomExt, int& topExt)
+{
+	leftExt = rightExt = topExt = bottomExt = 0;
+
+	const int c_left = node.x - sizeROI.width / 2;
+	const int c_left_border = 0;
+	if (c_left < c_left_border)
+	{
+		leftExt = c_left_border - c_left;
+	}
+
+	const int c_right = node.x + sizeROI.width / 2;
+	const int c_right_border = cvImage.cols - 1;
+	if (c_right_border < c_right )
+	{
+		rightExt = c_right - c_right_border;
+	}
+
+	const int c_top = node.y - sizeROI.height / 2;
+	const int c_top_border = 0;
+	if (c_top < c_top_border)
+	{
+		topExt = c_top_border - c_top;
+	}
+
+	const int c_bottom_border = cvImage.rows - 1;
+	const int c_bottom = node.y + sizeROI.height / 2;
+	if (c_bottom_border < c_bottom)
+	{
+		bottomExt = c_bottom - c_bottom_border;
+	}
+}
+
+void AlgorithmsImages::expandImage(NodeType nodeType, cv::Mat& cvImage)
+{
+	assert(nodeType != NODETYPE_CENTER);
+	if (nodeType == NODETYPE_CENTER)
+	{
+		return;
+	}
+	int extent = abs(cvImage.cols - cvImage.rows);
+
+	switch (nodeType)
+	{
+	case NODETYPE_INVALID:
+		return;
+		break; // no matter :)
+	case NODETYPE_CENTER:
+		return;
+		break;
+	case NODETYPE_TOP_LEFT:
+		cv::copyMakeBorder(cvImage, cvImage, extent, 0, extent, 0, cv::BORDER_CONSTANT);
+		break;
+	case NODETYPE_TOP_RIGHT:
+		cv::copyMakeBorder(cvImage, cvImage, extent, 0, 0, extent, cv::BORDER_CONSTANT);
+		break;
+	case NODETYPE_BOTTOM_LEFT:
+		cv::copyMakeBorder(cvImage, cvImage, 0, extent, extent, 0, cv::BORDER_CONSTANT);
+		break;
+	case NODETYPE_BOTTOM_RIGHT:
+		cv::copyMakeBorder(cvImage, cvImage, 0, extent, 0, extent, cv::BORDER_CONSTANT);
+		break;
+	case NODETYPE_LEFT:
+		cv::copyMakeBorder(cvImage, cvImage, 0, 0, extent, 0, cv::BORDER_CONSTANT);
+		break;
+	case NODETYPE_TOP:
+		cv::copyMakeBorder(cvImage, cvImage, extent, 0, 0, 0, cv::BORDER_CONSTANT);
+		break;
+	case NODETYPE_RIGHT:
+		cv::copyMakeBorder(cvImage, cvImage, 0, 0, 0, extent, cv::BORDER_CONSTANT);
+		break;
+	case NODETYPE_BOTTOM:
+		cv::copyMakeBorder(cvImage, cvImage, 0, extent, 0, 0, cv::BORDER_CONSTANT);
+		break;
+	default:
+		break;
+	}
+
 }
