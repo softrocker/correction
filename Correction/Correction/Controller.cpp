@@ -16,7 +16,7 @@ Controller::Controller(Model* model, GraphicsScene* scene)
 	connect(scene, &GraphicsScene::nodePosChangedS, model, &Model::setNodePosition);
 	connect(scene, &GraphicsScene::mousePosChangedS, this, &Controller::mousePosChangedS);
 	connect(model, &Model::sendProgressS, this, &Controller::sendProgressS);
-	connect(model, &Model::operationfinishedS, this, [=] {sendProgressS(0); });
+	connect(model, &Model::operationfinishedS, this, [=] {sendProgressS(0); unblockButtonsS(); });
 	connect(model, &Model::updateVisualizationS, this, [=] {scene->addNodesItems(model_->getNodesVisual()); });
 
 	qRegisterMetaType<Operation>("Operation");

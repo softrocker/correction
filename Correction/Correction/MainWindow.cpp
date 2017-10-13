@@ -46,6 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(this, &MainWindow::applySettingsS, parametersWidget_, &ParametersWidget::setParameters);
 	connect(parametersWidget_, &ParametersWidget::parametersChangedS, this, &MainWindow::setParameters);
 	connect(controller_, &Controller::sendProgressS, this, &MainWindow::setProgress);
+	connect(controller_, &Controller::unblockButtonsS, this, [=] {blockButtons(false);});
 
 	applyParameters();
 
@@ -82,6 +83,7 @@ void MainWindow::createActions()
 		operationParams.push_back(params_.gridRows);
 		operationParams.push_back(params_.gridCols);
 		controller_->doOperationS(OPERATION_FIND_NODES_APPROX, operationParams);
+		blockButtons(true);
 	});
 
 	actionFindNodesAccurately_ = new QAction(tr("&Find nodes accurately"), this);
@@ -94,6 +96,7 @@ void MainWindow::createActions()
 		operationParams.push_back(params_.gridCols);
 		operationParams.push_back(params_.cellSizeFactor);
 		controller_->doOperationS(OPERATION_FIND_NODES_ACCURATE, operationParams);
+		blockButtons(true);
 	});
 
 	actionFindSingleNodeAccurately_ = new QAction(tr("Find single node accurately"), this);
@@ -270,4 +273,15 @@ void MainWindow::setParameters(const Parameters& params)
 void MainWindow::setProgress(int progressPercents)
 {
 	progressBar_->setValue(progressPercents);
+}
+
+void MainWindow::blockButtons(bool block)
+{
+	actionLoadImage_->setDisabled(block);
+	actionFindNodexApprox_->setDisabled(block);
+	actionFindNodesAccurately_->setDisabled(block);
+	actionFindSingleNodeAccurately_->setDisabled(block);
+	actionTest_->setDisabled(block);
+	actionIter0_->setDisabled(block);
+	actionIter1_->setDisabled(block);
 }

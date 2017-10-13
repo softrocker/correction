@@ -27,21 +27,14 @@ public:
 	void setImage(const cv::Mat& cvImage); //void readImage(const std::string& filename);
 
 	void findNodesApproximately(int rows, int cols);
-	void clarifyNodes0(const cv::Mat& cvImage, NodesSet& nodesSet, int grid_rows, int grid_cols);
-	void clarifyNodes1(const cv::Mat& cvImage, NodesSet& nodesSet);
-	void clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet);
-
 	void findNodesAccurately(int rows, int cols, double cellSizeFactor);
-
 	void findSingleNodeAccurately(int row, int col, double cellSizeFactor, bool nodeSelected = false); // if nodeSelected == true => node will be equal to nodeCur_ and row and col will be not used
 	void calculateCorrectionTable(int iteration);
-
-	QVector<QPoint> getNodesVisual() const; // <------ not needed method in model, TODO replace.
 	void test();
 
-	void setNodePosition(int index, int posX, int posY);
+	QVector<QPoint> getNodesVisual() const; // <------ not needed method in model, TODO replace.
 
-	bool valid();
+	void setNodePosition(int index, int posX, int posY);
 
 	void doOperation(const Operation& operation, const QVariantList& operationParameters);
 	
@@ -55,17 +48,14 @@ signals:
 	void operationfinishedS();
 
 private:
+	void clarifyNodes0(const cv::Mat& cvImage, NodesSet& nodesSet, int grid_rows, int grid_cols);
+	void clarifyNodes1(const cv::Mat& cvImage, NodesSet& nodesSet);
+	void clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet);
+	bool valid();
 	
 private:
 	
 	cv::Mat cvImage_;
 	NodesSet nodesSet_;
-	//cv::Point nodeCur_; // special variable for testing
 	int indexCur_; // also variable for testing
-	//std::vector<cv::Point> nodes_;
-};
-
-class Worker : public QObject
-{
-
 };

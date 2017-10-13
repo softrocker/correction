@@ -208,6 +208,18 @@ void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, bo
 	cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected);
 	cv::Size sizeSubImageCorrected = cvSubImage.size();
 
+	//prelimitary smoothing to avoid incorrect calculation of line thickness (optional):
+	try
+	{
+		cv::GaussianBlur(cvSubImage, cvSubImage, cv::Size(21,21), 0, 0, cv::BORDER_DEFAULT);
+	}
+	catch (std::exception& e)
+	{
+		QMessageBox::critical(NULL, "Error", e.what());
+		return;
+	}
+	
+
 	//find line thickness for sloped horizontal line:
 	std::vector<double> sumsSloped;
 	AlgorithmsImages::sumIntensityHorizontallyWithSlope(cvSubImage, angle, sumsSloped);
@@ -274,11 +286,12 @@ void Model::calculateCorrectionTable(int iteration)
 	valuesY = std::vector<cv::Point>(valuesY.begin() + 1, valuesY.end() - 1);
 	cv::Vec4d lineOy;
 	cv::fitLine(valuesY, lineOy, CV_DIST_L2, 0, 0.01, 0.01);
-	cv::Vec2d e2 = cv::Vec2d(lineOy[0], lineOy[1]); // unit ort of "y-axis" of nodes-set
-	if (e2[1] > 0)
-	{
-		e2 = -e2;
-	}
+	cv::Vec2d e2 = cv::Vec2d(e1[1],-e1[0]); // e2 is orth. to e1
+	//cv::Vec2d e2 = cv::Vec2d(lineOy[0], lineOy[1]); // unit ort of "y-axis" of nodes-set
+	//if (e2[1] > 0)
+	//{
+	//	e2 = -e2;
+	//}
 
 	//calculate average size of grid cell:
 	const int c_cell_count_x = c_cols - 3;

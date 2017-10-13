@@ -43,6 +43,7 @@ private:
 	void closeEvent(QCloseEvent *event);
 	void setParameters(const Parameters& params);
 	void setProgress(int progressPercents);
+	void blockButtons(bool block);
 private:
 	Controller* controller_;
 

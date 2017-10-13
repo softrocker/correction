@@ -33,7 +33,7 @@ namespace DataTransfer
 		{
 			return;
 		}
-		cvImage = cv::imread(imgName.toStdString(), CV_LOAD_IMAGE_GRAYSCALE);
+		cvImage = cv::imread(imgName.toLocal8Bit().constData(), CV_LOAD_IMAGE_GRAYSCALE);
 	}
 
 	void saveImage(QWidget* parent, const QImage& image)

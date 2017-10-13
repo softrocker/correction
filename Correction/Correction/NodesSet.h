@@ -19,20 +19,22 @@ enum NodeType
 class NodesSet
 {
 public:
+	cv::Point& at(int row, int col);
+	const cv::Point& at(int row, int col) const;
 	void create(const std::vector<cv::Point>& nodes, int cols, int rows);
+	const cv::Point& center() const;
+	bool empty();
+	cv::Mat_<cv::Point> getNodes() const;
+	cv::Size getCellSize() const;
+	NodeType getNodeType(int row, int col);
+	float getAngle(int row, int col, int dir); // returns approximate value of angle (in radians) of the cross (by approximately found nodes)
+	void setNode(int row, int col, const cv::Point& p);
+
 	std::vector<cv::Point> row(int index) const;
 	std::vector<cv::Point> col(int index) const;
 	int cols() const;
 	int rows() const;
-	cv::Mat_<cv::Point> getNodes() const;
-	cv::Point& at(int row, int col);
-	const cv::Point& at(int row, int col) const;
-	const cv::Point& center() const;
-	cv::Size getCellSize() const;
-	void setNode(int row, int col, const cv::Point& p);
-	NodeType getNodeType(int row, int col);
-	bool empty();
-	float getAngle(int row, int col, int dir); // returns approximate value of angle (in radians) of the cross (by approximately found nodes)
+	
 private:
 	cv::Mat_<cv::Point> nodes_;
 };

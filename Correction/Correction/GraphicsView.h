@@ -20,7 +20,6 @@ signals:
 	
 protected:
    virtual void wheelEvent(QWheelEvent* event);
-	//void mouseMoveEvent(QMouseEvent *event);
 };
 
 #endif
