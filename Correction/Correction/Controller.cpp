@@ -17,7 +17,12 @@ Controller::Controller(Model* model, GraphicsScene* scene)
 	connect(scene, &GraphicsScene::mousePosChangedS, this, &Controller::mousePosChangedS);
 	connect(model, &Model::sendProgressS, this, &Controller::sendProgressS);
 	connect(model, &Model::operationfinishedS, this, [=] {sendProgressS(0); unblockButtonsS(); });
-	connect(model, &Model::updateVisualizationS, this, [=] {scene->addNodesItems(model_->getNodesVisual()); });
+	connect(model, &Model::updateVisualizationS, this, 
+		[=] 
+	{
+		scene->addNodesItems(model_->getNodesVisual());
+		scene->addProblemRectItems(model->getProblemRects());
+	});
 
 	qRegisterMetaType<Operation>("Operation");
 	connect(this, &Controller::doOperationS, model, &Model::doOperation); // operations in model work in separate thread
@@ -47,6 +52,7 @@ void Controller::loadImage()
 	ImageDisplay imageDisplay;
 	createVisualImageBlocks(cvImage, imageDisplay);
 	scene_->addImageBlocks(imageDisplay);
+	//emit model_->updateVisualizationS();
 }
 
 void Controller::createVisualImageBlocks(const cv::Mat& cvImage, ImageDisplay& imageDisplay)

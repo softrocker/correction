@@ -15,6 +15,8 @@ public:
 	void deleteImageBlocks();
 	void addNodesItems(const QVector<QPoint>& nodesPositions);
 	void deleteNodesItems();
+	void addProblemRectItems(const QVector<QRect>& problemRects);
+	void deleteProblemRectItems();
 	void setScale(double scale);
 signals:
 	
@@ -29,6 +31,7 @@ protected:
 private:
 	QVector<QGraphicsPixmapItem*> imageBlockItems_;
 	QVector<QGraphicsEllipseItem*> nodesItems_;
+	QVector<QGraphicsRectItem*> problemItems_;
 	bool nodeSelected;
 	int nodeSelectedIndex;
 	double scale_;

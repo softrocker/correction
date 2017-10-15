@@ -48,11 +48,31 @@ ParametersWidget::ParametersWidget(QWidget* parent) :
 
 	layoutMain->addLayout(layoutCellSizeFactor);
 
+	spinboxBlurImage_ = new QSpinBox(this);
+	spinboxBlurImage_->setRange(0, 30);
+	QLabel* labelBlurImage = new QLabel(tr("Image blur (pixels):"), this);
+	QHBoxLayout* layoutBlurImage = new QHBoxLayout();
+	layoutBlurImage->addWidget(labelBlurImage);
+	layoutBlurImage->addWidget(spinboxBlurImage_);
+
+	layoutMain->addLayout(layoutBlurImage);
+
+	spinboxBlurMask_ = new QSpinBox(this);
+	spinboxBlurMask_->setRange(0, 30);
+	QLabel* labelBlurMask = new QLabel(tr("Mask blur (pixels):"), this);
+	QHBoxLayout* layoutBlurMask = new QHBoxLayout();
+	layoutBlurMask->addWidget(labelBlurMask);
+	layoutBlurMask->addWidget(spinboxBlurMask_);
+
+	layoutMain->addLayout(layoutBlurMask);
+
 	QGroupBox* groupBox = new QGroupBox(tr("Parameters"), this);
 	groupBox->setLayout(layoutMain);
 
 	connect(comboboxGridSize_, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated), this, [&](int index) { updateParameters(); });
 	connect(spinboxCellSizeFactor_, static_cast<void(QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, [&](int index) { updateParameters(); });
+	connect(spinboxBlurImage_, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, [&](int index) { updateParameters(); });
+	connect(spinboxBlurMask_, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, [&](int index) { updateParameters(); });
 }
 
 void ParametersWidget::updateParameters()
@@ -76,6 +96,8 @@ void ParametersWidget::setParameters(const Parameters& params)
 		Q_ASSERT(false);
 	}
 	spinboxCellSizeFactor_->setValue(params.cellSizeFactor);
+	spinboxBlurImage_->setValue(params.blurImage);
+	spinboxBlurMask_->setValue(params.blurMask);
 }
 
 Parameters ParametersWidget::getParameters()
@@ -93,6 +115,8 @@ Parameters ParametersWidget::getParameters()
 		params.gridCols = 33;
 	}
 	params.cellSizeFactor = spinboxCellSizeFactor_->value();
+	params.blurImage = spinboxBlurImage_->value();
+	params.blurMask = spinboxBlurMask_->value();
 	return params;
 }
 

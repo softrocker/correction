@@ -350,28 +350,6 @@ QImage AlgorithmsImages::Mat2QImageGray(const cv::Mat_<uchar> &src)
 	return dest;
 }
 
-void AlgorithmsImages::getLineSize(const cv::Mat& cvImage, cv::Size& size)
-{
-	cv::Mat cvImageBlurred;
-	cv::GaussianBlur(cvImage, cvImageBlurred, cv::Size(3,3), 0, 0);
-
-	std::vector<double> sumsAlongX;
-	sumIntensityHorizontally(cvImageBlurred, sumsAlongX);
-	std::vector<double> derivativesY;
-	Algorithms::differentiate(sumsAlongX, derivativesY);
-	std::vector<int> peaksY;
-	Algorithms::findPeaks(derivativesY, 2, 3, peaksY);
-	size.height = peaksY[1] - peaksY[0];
-
-	std::vector<double> sumsAlongY;
-	sumIntensityVertically(cvImageBlurred, sumsAlongY);
-	std::vector<double> derivativesX;
-	Algorithms::differentiate(sumsAlongY, derivativesX);
-	std::vector<int> peaksX;
-	Algorithms::findPeaks(derivativesX, 2, 3, peaksX);
-	size.width = peaksX[1] - peaksX[0];
-}
-
 void AlgorithmsImages::downsample(const cv::Mat& cvImage, cv::Mat& cvImageResult)
 {
 	cv::Mat cvImageDownsampled;
@@ -385,6 +363,7 @@ void AlgorithmsImages::getLineThickness(const std::vector<double>& sums, int& th
 	std::vector<double> sumsSmooth;
 
 	cv::GaussianBlur(sums, sumsSmooth, cv::Size(11, 1), 0, 0, cv::BORDER_REPLICATE);
+	//sumToSumByStrips(sums, 5, sumsSmooth);
 
 	std::vector<double> derivatives;
 	Algorithms::differentiate(sumsSmooth, derivatives);
@@ -505,5 +484,21 @@ void AlgorithmsImages::expandImage(NodeType nodeType, cv::Mat& cvImage)
 	default:
 		break;
 	}
+}
 
+void AlgorithmsImages::sumToSumByStrips(const std::vector<double>& sums, int widthStrip, std::vector<double>& sumByStrips)
+{
+	assert(widthStrip > 0);
+	assert(sums.size() > widthStrip);
+	if (sums.size() <= widthStrip || widthStrip <= 0)
+	{
+		return;
+	}
+	sumByStrips.resize(sums.size() - widthStrip);
+	for (int i = 0; i < sumByStrips.size(); i++)
+	{
+		auto iterFirst = sums.begin() + i;
+		auto iterLast = iterFirst + widthStrip;
+		sumByStrips[i] = std::accumulate(iterFirst, iterLast, 0) / widthStrip;
+	}
 }

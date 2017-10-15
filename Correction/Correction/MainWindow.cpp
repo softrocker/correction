@@ -95,6 +95,8 @@ void MainWindow::createActions()
 		operationParams.push_back(params_.gridRows);
 		operationParams.push_back(params_.gridCols);
 		operationParams.push_back(params_.cellSizeFactor);
+		operationParams.push_back(params_.blurImage);
+		operationParams.push_back(params_.blurMask);
 		controller_->doOperationS(OPERATION_FIND_NODES_ACCURATE, operationParams);
 		blockButtons(true);
 	});
@@ -106,6 +108,8 @@ void MainWindow::createActions()
 	{
 		QVariantList operationParams; // empty parameters list
 		operationParams.push_back(params_.cellSizeFactor);
+		operationParams.push_back(params_.blurImage);
+		operationParams.push_back(params_.blurMask);
 		controller_->doOperationS(OPERATION_FIND_SINGLE_NODE_ACCURATE, operationParams);
 	});
 
@@ -237,6 +241,14 @@ void MainWindow::loadSettings()
 	{
 		params_.cellSizeFactor = settings.value("cell_size_factor").toDouble();
 	}
+	if (settings.contains("blur_image"))
+	{
+		params_.blurImage = settings.value("blur_image").toInt();
+	}
+	if (settings.contains("blur_mask"))
+	{
+		params_.blurMask = settings.value("blur_mask").toInt();
+	}
 }
 
 void MainWindow::saveSettings()
@@ -245,6 +257,8 @@ void MainWindow::saveSettings()
 	settings.setValue("grid_cols", params_.gridCols);
 	settings.setValue("grid_rows", params_.gridRows);
 	settings.setValue("cell_size_factor", params_.cellSizeFactor);
+	settings.setValue("blur_image", params_.blurImage);
+	settings.setValue("blur_mask", params_.blurMask);
 }
 
 void MainWindow::applyParameters()

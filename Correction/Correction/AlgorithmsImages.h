@@ -28,7 +28,6 @@ struct Parall_m
 namespace AlgorithmsImages
 {
 	QImage Mat2QImageGray(const cv::Mat_<uchar> &src);
-	void getLineSize(const cv::Mat& cvImage, cv::Size& size);
 	void downsample(const cv::Mat& cvImage, cv::Mat& cvImageResult);
 	void getLineThickness(const std::vector<double>& sums, int& thickness);
 	void findCrosshair(const cv::Mat& cvSubImage, const cv::Point& posImage, cv::Point& crosshair);
@@ -40,6 +39,7 @@ namespace AlgorithmsImages
 	void getNodeSubImageROI(const cv::Mat& cvImage, const cv::Size& sizeROI, const cv::Point& node, cv::Rect& ROIcorrected);
 	void getImageExtents(const cv::Mat& cvImage, const cv::Size& sizeROI, const cv::Point& node, int& left, int& rigth, int& bottom, int& top);
 	void expandImage(NodeType nodeType, cv::Mat& cvImageDst);
+	void sumToSumByStrips(const std::vector<double>& sums, int widthStrip,  std::vector<double>& sumByStrips);
 	void generateMask(const cv::Size& sizeImage, const cv::Size& sizeLine, NodeType nodeType, cv::Mat& mask);
 
 	//algorithms that allows to generate mask considering angle of horizontal line:

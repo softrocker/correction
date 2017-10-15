@@ -51,8 +51,8 @@ void GraphicsScene::addNodesItems(const QVector<QPoint>& nodesPositions)
 	for (int i = 0; i < nodesPositions.size(); i++)
 	{
 		QGraphicsEllipseItem* nodeItem = addEllipse(QRect(nodesPositions[i].x()-5, nodesPositions[i].y()-5, 10, 10), QPen(QColor(255, 0, 0)), QBrush(QColor(255, 0, 0)));
-		//addItem(nodeItem);
 		nodeItem->setTransformOriginPoint(nodeItem->rect().center());
+		nodeItem->setZValue(100);
 		nodeItem->setScale(scale_);
 		nodesItems_.push_back(nodeItem);
 	}
@@ -65,6 +65,32 @@ void GraphicsScene::deleteNodesItems()
 		removeItem(nodesItems_[i]);
 	}
 	nodesItems_.clear();
+}
+
+void GraphicsScene::addProblemRectItems(const QVector<QRect>& problemRects)
+{
+	if (!problemItems_.empty())
+	{
+		deleteProblemRectItems();
+	}
+	for (int i = 0; i < problemRects.size(); i++)
+	{
+		QPen pen(QColor(0, 0, 255));
+		pen.setWidth(problemRects[i].width() / 10);
+		QGraphicsRectItem* item = addRect(problemRects[i], pen);
+		item->setTransformOriginPoint(problemRects[i].center());
+		//item->setScale(scale_);
+		problemItems_.push_back(item);
+	}
+}
+
+void GraphicsScene::deleteProblemRectItems()
+{
+	for (int i = 0; i < problemItems_.size(); i++)
+	{
+		removeItem(problemItems_[i]);
+	}
+	problemItems_.clear();
 }
 
 void GraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent* event)

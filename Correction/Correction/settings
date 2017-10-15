@@ -1,3 +1,6 @@
 [General]
-grid_cols=17
-grid_rows=17
+grid_cols=33
+grid_rows=33
+cell_size_factor=1
+blur_image=0
+blur_mask=0

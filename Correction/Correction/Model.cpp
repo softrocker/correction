@@ -134,7 +134,7 @@ void Model::clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet)
 		{
 			//create cvSubImage of size (cellSizeX x cellSizeY / 4):
 			cv::Point node = nodesSet.at(row, col);
-			cv::Size sizeSubImage(cellSize.width, cellSize.height / 4);
+			cv::Size sizeSubImage(cellSize.width, cellSize.height);
 			cv::Rect roiSubImage;
 			AlgorithmsImages::getNodeSubImageROI(cvImage, sizeSubImage, node, roiSubImage);
 			cv::Mat cvSubImage = cv::Mat(cvImage, cv::Rect(roiSubImage.tl(), roiSubImage.br()));
@@ -161,18 +161,20 @@ void Model::clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet)
 	emit updateVisualizationS();
 }
 
-void Model::findNodesAccurately(int rows, int cols, double cellSizeFactor)
+void Model::findNodesAccurately(int rows, int cols, double cellSizeFactor, int blurImage, int blurMask)
 {
 	if (!valid())
 	{
 		return;
 	}
+	problemRects_.clear();
+	nodesSetBase_ = nodesSet_;
 
 	for (int row = 0; row < nodesSet_.rows(); row++)
 	{
 		for (int col = 0; col < nodesSet_.cols(); col++)
 		{
-			findSingleNodeAccurately(row, col, cellSizeFactor);
+			findSingleNodeAccurately(row, col, cellSizeFactor, blurImage, blurMask);
 
 			int nodesCount = nodesSet_.rows() * nodesSet_.cols();
 			int progressInPercents = 100 * (row * nodesSet_.cols() + col) / nodesCount;
@@ -183,7 +185,7 @@ void Model::findNodesAccurately(int rows, int cols, double cellSizeFactor)
 	emit updateVisualizationS();
 }
 
-void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, bool nodeSelected)
+void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, int blurImage, int blurMask, bool nodeSelected)
 {
 	int row_local = row;
 	int col_local = col;
@@ -209,16 +211,16 @@ void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, bo
 	cv::Size sizeSubImageCorrected = cvSubImage.size();
 
 	//prelimitary smoothing to avoid incorrect calculation of line thickness (optional):
-	try
+	if (blurImage > 1)
 	{
-		cv::GaussianBlur(cvSubImage, cvSubImage, cv::Size(21,21), 0, 0, cv::BORDER_DEFAULT);
+		//special check for even numbers, because function GaussianBlur takes only odd parameter in window size:
+		if (blurImage % 2 == 0)
+		{
+			blurImage -= 1;
+		}
+
+		cv::GaussianBlur(cvSubImage, cvSubImage, cv::Size(blurImage, blurImage), 0, 0, cv::BORDER_DEFAULT);
 	}
-	catch (std::exception& e)
-	{
-		QMessageBox::critical(NULL, "Error", e.what());
-		return;
-	}
-	
 
 	//find line thickness for sloped horizontal line:
 	std::vector<double> sumsSloped;
@@ -236,23 +238,67 @@ void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, bo
 	NodeType nodeType = nodesSet_.getNodeType(row_local, col_local);
 	cv::Mat mask;
 	AlgorithmsImages::generateMaskWithAngle(sizeSubImageCorrected / 3, cv::Size(thicknessLineVertical, thicknessLineSloped), angle, nodeType, mask);
-	cv::Mat corrMatrix;
-
+	if (blurMask > 1)
+	{
+		//special check for even numbers, because function GaussianBlur takes only odd parameter in window size:
+		if (blurMask % 2 == 0)
+		{
+			blurMask -= 1;
+		}
+		cv::GaussianBlur(mask, mask, cv::Size(blurMask, blurMask), 0, 0, cv::BORDER_DEFAULT);
+	}
+	
+	//calculate subimage extents:
 	int leftExtent, rightExtent, topExtent, bottomExtent;
 	AlgorithmsImages::getImageExtents(cvImage_, sizeSubImage, node, leftExtent, rightExtent, bottomExtent, topExtent);
 	cv::copyMakeBorder(cvSubImage, cvSubImage, topExtent, bottomExtent, leftExtent, rightExtent, cv::BORDER_CONSTANT);
 
-	cv::matchTemplate(cvSubImage, mask, corrMatrix, cv::TM_CCORR_NORMED);
+	//calculate cross-correlation matrix and find maximum:
+	cv::Mat corrMatrix;
+	cv::matchTemplate(cvSubImage, mask, corrMatrix, CV_TM_CCOEFF_NORMED);
 	double minVal; double maxVal; cv::Point minLoc; cv::Point maxLoc;
 	cv::minMaxLoc(corrMatrix, &minVal, &maxVal, &minLoc, &maxLoc);
+
+	//new position of node:
 	cv::Point nodeNew = roiCorrected.tl() + cv::Point(-leftExtent, -topExtent) + maxLoc + cv::Point(mask.cols / 2, mask.rows / 2);
+
+	//remember problematic node location:
+	cv::Point delta = nodesSetBase_.at(row_local, col_local) - nodeNew;
+	double distance = sqrt(delta.x * delta.x + delta.y * delta.y);
+	int cellSide = std::min(sizeCell.width, sizeCell.height);
+	if (distance > cellSide / 10)
+	{
+		problemRects_.push_back(cv::Rect(nodeNew - cv::Point(sizeCell / 2), nodeNew + cv::Point(sizeCell / 2)));
+	}
+
 	node = nodeNew;
 
 	if (nodeSelected)
 	{
+		int indexOfRect(-1);
+		if (nodeInsideOneOfRects(nodeNew, indexOfRect))
+		{
+			problemRects_.erase(problemRects_.begin() + indexOfRect);
+		}
+
 		emit updateVisualizationS();
 	}
 	
+}
+
+bool Model::nodeInsideOneOfRects(const cv::Point& node, int& indexOfRect)
+{
+	
+	for (int i = 0; i < problemRects_.size(); i++)
+	{
+		if (problemRects_[i].contains(node))
+		{
+			indexOfRect = i;
+			return true;
+		}
+	}
+	indexOfRect = -1;
+	return false;
 }
 
 void Model::calculateCorrectionTable(int iteration)
@@ -358,6 +404,17 @@ QVector<QPoint> Model::getNodesVisual() const
 	return nodesPositions;
 }
 
+QVector<QRect> Model::getProblemRects() const
+{
+	QVector<QRect> problemRects;
+	for (int i = 0; i < problemRects_.size(); i++)
+	{
+		const cv::Rect& rect = problemRects_[i];
+		problemRects.push_back(QRect(rect.tl().x, rect.tl().y, rect.width, rect.height));
+	}
+	return problemRects;
+}
+
 void Model::test()
 {
 	assert(indexCur_ != INT_MIN);
@@ -421,6 +478,8 @@ void Model::doOperation(const Operation& operation, const QVariantList& operatio
 	int cols_count(-1);
 	int iteration(-1);
 	double cell_size_factor(-1.0);
+	int blurImage(-1);
+	int blurMask(-1);
 
 	switch (operation)
 	{
@@ -437,24 +496,28 @@ void Model::doOperation(const Operation& operation, const QVariantList& operatio
 		break;
 
 	case OPERATION_FIND_NODES_ACCURATE:
-		assert(operationParameters.size() == 3);
-		if (operationParameters.size() != 3)
+		assert(operationParameters.size() == 5);
+		if (operationParameters.size() != 5)
 		{
 			return;
 		}
 		rows_count = operationParameters[0].toInt();
 		cols_count = operationParameters[1].toInt();
 		cell_size_factor = operationParameters[2].toDouble();
-		findNodesAccurately(rows_count, cols_count, cell_size_factor);
+		blurImage = operationParameters[3].toInt();
+		blurMask = operationParameters[4].toInt();
+		findNodesAccurately(rows_count, cols_count, cell_size_factor, blurImage, blurMask);
 		break;
 	case OPERATION_FIND_SINGLE_NODE_ACCURATE:
-		assert(operationParameters.size() == 1);
-		if (operationParameters.size() != 1)
+		assert(operationParameters.size() == 3);
+		if (operationParameters.size() != 3)
 		{
 			return;
 		}
 		cell_size_factor = operationParameters[0].toDouble();
-		findSingleNodeAccurately(-1, -1, cell_size_factor, true);
+		blurImage = operationParameters[1].toInt();
+		blurMask = operationParameters[2].toInt();
+		findSingleNodeAccurately(-1, -1, cell_size_factor, blurImage, blurMask, true);
 		break;
 
 	case OPERATION_WRITE_CORRECTION_TABLE:

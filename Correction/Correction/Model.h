@@ -27,12 +27,14 @@ public:
 	void setImage(const cv::Mat& cvImage); //void readImage(const std::string& filename);
 
 	void findNodesApproximately(int rows, int cols);
-	void findNodesAccurately(int rows, int cols, double cellSizeFactor);
-	void findSingleNodeAccurately(int row, int col, double cellSizeFactor, bool nodeSelected = false); // if nodeSelected == true => node will be equal to nodeCur_ and row and col will be not used
+	void findNodesAccurately(int rows, int cols, double cellSizeFactor, int blurImage, int blurMask);
+	void findSingleNodeAccurately(int row, int col, double cellSizeFactor, int blurImage, int blurMask, bool nodeSelected = false); // if nodeSelected == true => node will be equal to nodeCur_ and row and col will be not used
+	bool nodeInsideOneOfRects(const cv::Point& node, int& indexOfRect);
 	void calculateCorrectionTable(int iteration);
 	void test();
 
 	QVector<QPoint> getNodesVisual() const; // <------ not needed method in model, TODO replace.
+	QVector<QRect> getProblemRects()const;
 
 	void setNodePosition(int index, int posX, int posY);
 
@@ -57,5 +59,7 @@ private:
 	
 	cv::Mat cvImage_;
 	NodesSet nodesSet_;
-	int indexCur_; // also variable for testing
+	NodesSet nodesSetBase_;
+	std::vector<cv::Rect>problemRects_;
+	int indexCur_; // variable for testing
 };

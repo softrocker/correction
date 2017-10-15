@@ -6,6 +6,7 @@
 
 class QComboBox;
 class QDoubleSpinBox;
+class QSpinBox;
 
 class ParametersWidget : public QWidget
 {
@@ -22,6 +23,8 @@ signals:
 private:
 	QComboBox* comboboxGridSize_;
 	QDoubleSpinBox* spinboxCellSizeFactor_;
+	QSpinBox* spinboxBlurImage_;
+	QSpinBox* spinboxBlurMask_;
 };
 
 enum GridSize
