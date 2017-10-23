@@ -6,6 +6,7 @@
 #include <QImage>
 
 #include "NodesSet.h"
+#include "Parameters.h"
 
 struct ImageDisplay;
 
@@ -16,7 +17,7 @@ enum Operation
 	OPERATION_FIND_SINGLE_NODE_ACCURATE = 2,
 	OPERATION_WRITE_CORRECTION_TABLE = 3
 };
-Q_DECLARE_METATYPE(Operation)
+
 
 class Model : public QObject
 {
@@ -26,9 +27,10 @@ public:
 	~Model();
 	void setImage(const cv::Mat& cvImage); //void readImage(const std::string& filename);
 
-	void findNodesApproximately(int rows, int cols);
-	void findNodesAccurately(int rows, int cols, double cellSizeFactor, int blurImage, int blurMask);
-	void findSingleNodeAccurately(int row, int col, double cellSizeFactor, int blurImage, int blurMask, bool nodeSelected = false); // if nodeSelected == true => node will be equal to nodeCur_ and row and col will be not used
+	void findNodesApproximately(int rows, int cols, int peakNeighborhoodGlobal);
+	void findNodesAccurately(int rows, int cols, double cellSizeFactor, int blurImage, int blurMask, int peakNeighborhoodLocal);
+	void findSingleNodeAccurately(int row, int col, double cellSizeFactor, int blurImage, int blurMask,
+		int peakNeighborhoodLocal, bool nodeSelected = false); // if nodeSelected == true => node will be equal to nodeCur_ and row and col will be not used
 	bool nodeInsideOneOfRects(const cv::Point& node, int& indexOfRect);
 	void calculateCorrectionTable(int iteration);
 	void test();
@@ -38,11 +40,16 @@ public:
 
 	void setNodePosition(int index, int posX, int posY);
 
-	void doOperation(const Operation& operation, const QVariantList& operationParameters);
+	//void doOperation(const Operation& operation, const QVariantList& operationParameters);
+	void doOperation(const Operation& operation);
 	
 	cv::Point nodeCur();
 
 	void getRowColByIndex(int index, int& row, int& col);
+
+	void setParams(const Parameters& params);
+
+	void removeProblemRect(int index);
 
 signals:
 	void updateVisualizationS();
@@ -50,8 +57,9 @@ signals:
 	void operationfinishedS();
 
 private:
-	void clarifyNodes0(const cv::Mat& cvImage, NodesSet& nodesSet, int grid_rows, int grid_cols);
-	void clarifyNodes1(const cv::Mat& cvImage, NodesSet& nodesSet);
+	void clarifyNodes0(const cv::Mat& cvImage, NodesSet& nodesSet, int grid_rows, int grid_cols
+		, int peakNeighborhoodGlobal);
+	void clarifyNodes1(const cv::Mat& cvImage, NodesSet& nodesSet, int peakNeighborhoodGlobal);
 	void clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet);
 	bool valid();
 	
@@ -62,4 +70,5 @@ private:
 	NodesSet nodesSetBase_;
 	std::vector<cv::Rect>problemRects_;
 	int indexCur_; // variable for testing
+	Parameters params_;
 };

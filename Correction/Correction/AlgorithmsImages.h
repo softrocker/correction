@@ -29,7 +29,7 @@ namespace AlgorithmsImages
 {
 	QImage Mat2QImageGray(const cv::Mat_<uchar> &src);
 	void downsample(const cv::Mat& cvImage, cv::Mat& cvImageResult);
-	void getLineThickness(const std::vector<double>& sums, int& thickness);
+	void getLineThickness(const std::vector<double>& sums, int peakNeighborhood, int blur, int& thickness);
 	void findCrosshair(const cv::Mat& cvSubImage, const cv::Point& posImage, cv::Point& crosshair);
 	void createVisualImageBlocks(const cv::Mat& cvImage, int blockWidth, int blockHeight, ImageDisplay& imageDisplay);
 

@@ -7,11 +7,24 @@ struct Parameters
 {
 	int gridRows;
 	int gridCols;
-	double cellSizeFactor; 
+	double cellSizeFactor;
+
+	int smoothingAlgorithm;
+
 	int blurImage;
 	int blurMask;
-	bool valid()
-	{
-		return (gridRows > 0) && (gridRows <= 65) && (gridCols > 0) && (gridCols <= 65);
-	}
+	int maxPosError; // how much "approximate" node position can be different from "precise" (in percents).   
+
+	bool thresholdEnabled;
+	bool autoThresholdEnabled;
+	int thresholdValue;
+
+	int peakNeighGlobal;
+	int peakNeighLocal;
+};
+
+enum SmoothingAlgorithm
+{
+	SMOOTHING_GAUSS = 0,
+	SMOOTHING_MEDIAN = 1
 };

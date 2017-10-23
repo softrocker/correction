@@ -18,8 +18,10 @@ public:
 	void addProblemRectItems(const QVector<QRect>& problemRects);
 	void deleteProblemRectItems();
 	void setScale(double scale);
+	void deleteAllVisualizaton();
 signals:
 	
+	void problemRectDeletedS(int indexRect);
 	void nodeSelectedS(int indexNode);
 	void nodePosChangedS(int index, int posX, int posY);
 	void mousePosChangedS(const QPointF& pos);

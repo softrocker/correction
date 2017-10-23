@@ -43,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	connect(controller_, &Controller::mousePosChangedS, this, &MainWindow::setMousePos);
 	connect(controller_, &Controller::nodeSelectedS, this, &MainWindow::nodeSelected);
-	connect(this, &MainWindow::applySettingsS, parametersWidget_, &ParametersWidget::setParameters);
+	connect(this, &MainWindow::applySettingsS, parametersWidget_, [=] {parametersWidget_->setParameters(params_); });//  &ParametersWidget::setParameters);
 	connect(parametersWidget_, &ParametersWidget::parametersChangedS, this, &MainWindow::setParameters);
 	connect(controller_, &Controller::sendProgressS, this, &MainWindow::setProgress);
 	connect(controller_, &Controller::unblockButtonsS, this, [=] {blockButtons(false);});
@@ -77,12 +77,11 @@ void MainWindow::createActions()
 	//operation actions:
 	actionFindNodexApprox_ = new QAction(tr("&Find nodes approximately"), this);
 	actionFindNodexApprox_->setStatusTip(tr("Find nodes approximately"));
-	connect(actionFindNodexApprox_, &QAction::triggered, controller_, [&](bool checked)
+
+	connect(actionFindNodexApprox_, &QAction::triggered, controller_, [=](bool checked)
 	{
-		QVariantList operationParams;
-		operationParams.push_back(params_.gridRows);
-		operationParams.push_back(params_.gridCols);
-		controller_->doOperationS(OPERATION_FIND_NODES_APPROX, operationParams);
+		model_->setParams(params_);
+		controller_->doOperationS(OPERATION_FIND_NODES_APPROX);
 		blockButtons(true);
 	});
 
@@ -91,13 +90,8 @@ void MainWindow::createActions()
 	connect(actionFindNodesAccurately_, &QAction::triggered, controller_, 
 		[&](bool checked)
 	{
-		QVariantList operationParams;
-		operationParams.push_back(params_.gridRows);
-		operationParams.push_back(params_.gridCols);
-		operationParams.push_back(params_.cellSizeFactor);
-		operationParams.push_back(params_.blurImage);
-		operationParams.push_back(params_.blurMask);
-		controller_->doOperationS(OPERATION_FIND_NODES_ACCURATE, operationParams);
+		model_->setParams(params_);
+		controller_->doOperationS(OPERATION_FIND_NODES_ACCURATE);
 		blockButtons(true);
 	});
 
@@ -106,14 +100,9 @@ void MainWindow::createActions()
 	connect(actionFindSingleNodeAccurately_, &QAction::triggered, controller_,
 		[&](bool checked)
 	{
-		QVariantList operationParams; // empty parameters list
-		operationParams.push_back(params_.cellSizeFactor);
-		operationParams.push_back(params_.blurImage);
-		operationParams.push_back(params_.blurMask);
-		controller_->doOperationS(OPERATION_FIND_SINGLE_NODE_ACCURATE, operationParams);
+		model_->setParams(params_);
+		controller_->doOperationS(OPERATION_FIND_SINGLE_NODE_ACCURATE);
 	});
-
-
 
 	actionIter0_ = new QAction(tr("Itetation 0"), this);
 	actionIter1_ = new QAction(tr("Itetation 1"), this);
@@ -121,17 +110,13 @@ void MainWindow::createActions()
 	connect(actionIter0_, &QAction::triggered, controller_,
 		[&](bool checked)
 	{
-		QVariantList operationParams;
-		operationParams.push_back(0);
-		controller_->doOperationS(OPERATION_WRITE_CORRECTION_TABLE, operationParams);
+		model_->calculateCorrectionTable(0);
 	});
 
 	connect(actionIter1_, &QAction::triggered, controller_,
 		[&](bool checked)
 	{
-		QVariantList operationParams;
-		operationParams.push_back(1);
-		controller_->doOperationS(OPERATION_WRITE_CORRECTION_TABLE, operationParams);
+		model_->calculateCorrectionTable(1);
 	});
 
 	actionTest_ = new QAction(tr("&Test"), this);
@@ -211,13 +196,13 @@ void MainWindow::createMenu()
 	menuOperations->addMenu(menuWriteTable_);
 	menuOperations->addAction(actionTest_);
 	
-	//actionTest_->setVisible(false);
+	actionTest_->setVisible(false);
 }
 
 void MainWindow::setMousePos(const QPointF& pos)
 {
-	labelX_->setText("x = " + QString().setNum(pos.x(), 'f', 3));
-	labelY_->setText("y = " + QString().setNum(pos.y(), 'f', 3));
+	labelX_->setText("x = " + QString().setNum(static_cast<int>(pos.x())));
+	labelY_->setText("y = " + QString().setNum(static_cast<int>(pos.y())));
 }
 
 void MainWindow::nodeSelected(int row, int col)
@@ -249,6 +234,39 @@ void MainWindow::loadSettings()
 	{
 		params_.blurMask = settings.value("blur_mask").toInt();
 	}
+	if (settings.contains("max_pos_error"))
+	{
+		params_.maxPosError = settings.value("max_pos_error").toInt();
+	}
+	if (settings.contains("peak_neigh_global"))
+	{
+		params_.peakNeighGlobal = settings.value("peak_neigh_global").toInt();
+	}
+	if (settings.contains("peak_neigh_local"))
+	{
+		params_.peakNeighLocal = settings.value("peak_neigh_local").toInt();
+	}
+	if (settings.contains("threshold_enabled"))
+	{
+		params_.thresholdEnabled = settings.value("threshold_enabled").toBool();
+	}
+	if (settings.contains("auto_threshold_enabled"))
+	{
+		params_.autoThresholdEnabled = settings.value("auto_threshold_enabled").toBool();
+	}
+	if (settings.contains("threshold_value"))
+	{
+		params_.thresholdValue = settings.value("threshold_value").toInt();
+	}
+	if (settings.contains("smoothing_algorithm"))
+	{
+		params_.smoothingAlgorithm = settings.value("smoothing_algorithm").toInt();
+	}
+	else
+	{
+		params_.smoothingAlgorithm = SMOOTHING_GAUSS;
+	}
+
 }
 
 void MainWindow::saveSettings()
@@ -259,14 +277,18 @@ void MainWindow::saveSettings()
 	settings.setValue("cell_size_factor", params_.cellSizeFactor);
 	settings.setValue("blur_image", params_.blurImage);
 	settings.setValue("blur_mask", params_.blurMask);
+	settings.setValue("max_pos_error", params_.maxPosError);
+	settings.setValue("peak_neigh_global", params_.peakNeighGlobal);
+	settings.setValue("peak_neigh_local", params_.peakNeighLocal);
+	settings.setValue("threshold_enabled", params_.thresholdEnabled);
+	settings.setValue("auto_threshold_enabled", params_.autoThresholdEnabled);
+	settings.setValue("threshold_value", params_.thresholdValue);
+	settings.setValue("smoothing_algorithm", params_.smoothingAlgorithm);
 }
 
 void MainWindow::applyParameters()
 {
-	if (params_.valid())
-	{
-		emit applySettingsS(params_);
-	}
+	emit applySettingsS(params_);
 }
 
 void MainWindow::test()

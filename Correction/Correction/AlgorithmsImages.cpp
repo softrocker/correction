@@ -358,21 +358,29 @@ void AlgorithmsImages::downsample(const cv::Mat& cvImage, cv::Mat& cvImageResult
 }
 
 
-void AlgorithmsImages::getLineThickness(const std::vector<double>& sums, int& thickness)
+void AlgorithmsImages::getLineThickness(const std::vector<double>& sums, int peakNeighborhood, int blur, int& thickness)
 {
 	std::vector<double> sumsSmooth;
 
-	cv::GaussianBlur(sums, sumsSmooth, cv::Size(11, 1), 0, 0, cv::BORDER_REPLICATE);
+	if (blur > 0)
+	{
+		if (blur % 2 == 0)
+		{
+			blur -= 1;
+		}
+		cv::GaussianBlur(sums, sumsSmooth, cv::Size(blur, 1), 0, 0, cv::BORDER_REPLICATE);
+	}
+
 	//sumToSumByStrips(sums, 5, sumsSmooth);
 
 	std::vector<double> derivatives;
 	Algorithms::differentiate(sumsSmooth, derivatives);
 	Algorithms::nullifyBounds(derivatives.size() / 10, derivatives);
-	DataTransfer::saveValuesToFile(sumsSmooth, "sums_smooth.txt");
-	DataTransfer::saveValuesToFile(derivatives, "derivatives.txt");
+	//DataTransfer::saveValuesToFile(sumsSmooth, "sums_smooth.txt");
+	//DataTransfer::saveValuesToFile(derivatives, "derivatives.txt");
 
 	std::vector<int> peaks;
-	Algorithms::findPeaks(derivatives, 2, 5, peaks);
+	Algorithms::findPeaks(derivatives, 2, peakNeighborhood, peaks);
 	thickness = peaks[1] - peaks[0];
 }
 

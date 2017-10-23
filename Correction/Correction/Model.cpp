@@ -33,21 +33,23 @@ void Model::setImage(const cv::Mat& cvImage)
 	cvImage_ = cvImage;
 }
 
-void Model::findNodesApproximately(int rows, int cols)
+void Model::findNodesApproximately(int rows, int cols, int peakNeighborhoodGlobal)
 {
 	assert(!cvImage_.empty());
 	if (cvImage_.empty())
 	{
 		return;
 	}
-
-	clarifyNodes0(cvImage_, nodesSet_, rows, cols);
-	clarifyNodes1(cvImage_, nodesSet_);
+	problemRects_.clear();
+	clarifyNodes0(cvImage_, nodesSet_, rows, cols, peakNeighborhoodGlobal);
+	clarifyNodes1(cvImage_, nodesSet_, peakNeighborhoodGlobal);
 	clarifyNodes2(cvImage_, nodesSet_);
+	nodesSetBase_ = nodesSet_;
 }
 
-void Model::clarifyNodes0(const cv::Mat& cvImage, NodesSet& nodesSet, int grid_rows, int grid_cols)
+void Model::clarifyNodes0(const cv::Mat& cvImage, NodesSet& nodesSet, int grid_rows, int grid_cols, int peakNeighborhoodGlobal)
 {
+
 	assert(!cvImage.empty());
 	if (cvImage.empty())
 	{
@@ -63,9 +65,9 @@ void Model::clarifyNodes0(const cv::Mat& cvImage, NodesSet& nodesSet, int grid_r
 
 	//finding peaks:
 	std::vector<int> peaksY;
-	Algorithms::findPeaks(sumsAlongX, grid_rows, c_neighborhood, peaksY);
+	Algorithms::findPeaks(sumsAlongX, grid_rows, peakNeighborhoodGlobal, peaksY);
 	std::vector<int> peaksX;
-	Algorithms::findPeaks(sumsAlongY, grid_cols, c_neighborhood, peaksX);
+	Algorithms::findPeaks(sumsAlongY, grid_cols, peakNeighborhoodGlobal, peaksX);
 
 	//finding nodes positions using finded peaks:
 	bool startFromBottom = true;
@@ -88,7 +90,7 @@ void Model::clarifyNodes0(const cv::Mat& cvImage, NodesSet& nodesSet, int grid_r
 	nodesSet.create(nodes, grid_cols, grid_rows);
 }
 
-void Model::clarifyNodes1(const cv::Mat& cvImage, NodesSet& nodesSet)
+void Model::clarifyNodes1(const cv::Mat& cvImage, NodesSet& nodesSet, int peakNeighborhoodGlobal)
 {
 	// get cell size
 	cv::Size cellSize = nodesSet.getCellSize();
@@ -106,7 +108,7 @@ void Model::clarifyNodes1(const cv::Mat& cvImage, NodesSet& nodesSet)
 
 		//find peaks:
 		std::vector<int> peaks;
-		Algorithms::findPeaks(sums, nodesSet.rows(), c_neighborhood, peaks);
+		Algorithms::findPeaks(sums, nodesSet.rows(), peakNeighborhoodGlobal, peaks);
 		std::reverse(peaks.begin(), peaks.end());
 
 		// shift each node in column to corresponding peak
@@ -161,20 +163,18 @@ void Model::clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet)
 	emit updateVisualizationS();
 }
 
-void Model::findNodesAccurately(int rows, int cols, double cellSizeFactor, int blurImage, int blurMask)
+void Model::findNodesAccurately(int rows, int cols, double cellSizeFactor, int blurImage, int blurMask, int peakNeighborhoodLocal)
 {
 	if (!valid())
 	{
 		return;
 	}
-	problemRects_.clear();
-	nodesSetBase_ = nodesSet_;
 
 	for (int row = 0; row < nodesSet_.rows(); row++)
 	{
 		for (int col = 0; col < nodesSet_.cols(); col++)
 		{
-			findSingleNodeAccurately(row, col, cellSizeFactor, blurImage, blurMask);
+			findSingleNodeAccurately(row, col, cellSizeFactor, blurImage, blurMask, peakNeighborhoodLocal);
 
 			int nodesCount = nodesSet_.rows() * nodesSet_.cols();
 			int progressInPercents = 100 * (row * nodesSet_.cols() + col) / nodesCount;
@@ -185,7 +185,7 @@ void Model::findNodesAccurately(int rows, int cols, double cellSizeFactor, int b
 	emit updateVisualizationS();
 }
 
-void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, int blurImage, int blurMask, bool nodeSelected)
+void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, int blurImage, int blurMask, int peakNeighborhoodLocal, bool nodeSelected)
 {
 	int row_local = row;
 	int col_local = col;
@@ -210,34 +210,72 @@ void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, in
 	cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected);
 	cv::Size sizeSubImageCorrected = cvSubImage.size();
 
-	//prelimitary smoothing to avoid incorrect calculation of line thickness (optional):
-	if (blurImage > 1)
-	{
-		//special check for even numbers, because function GaussianBlur takes only odd parameter in window size:
-		if (blurImage % 2 == 0)
-		{
-			blurImage -= 1;
-		}
+	cv::Mat cvSubImageBlurred;
 
-		cv::GaussianBlur(cvSubImage, cvSubImage, cv::Size(blurImage, blurImage), 0, 0, cv::BORDER_DEFAULT);
+	bool blur = true;
+	if (blur)
+	{
+		int blurSize = params_.blurImage;
+		if (blurSize > 0)
+		{
+			if (blurSize % 2 == 0)
+			{
+				blurSize -= 1;
+			}
+
+			int smoothingAlgorithm = params_.smoothingAlgorithm;
+			if (smoothingAlgorithm == SMOOTHING_GAUSS)
+			{
+				cv::GaussianBlur(cvSubImage, cvSubImageBlurred, cv::Size(blurSize, blurSize), 0, 0);
+			}
+			else if (smoothingAlgorithm == SMOOTHING_MEDIAN)
+			{
+				cv::medianBlur(cvSubImage, cvSubImageBlurred, blurSize);
+			}
+
+			if (nodeSelected)
+			{
+				cv::imwrite("image_real.png", cvSubImage);
+				cv::imwrite("image_median_blurred.png", cvSubImageBlurred);
+			}
+		}
+	}
+	
+	cv::Mat cvImageToGetLineThickness = blur ? cvSubImageBlurred : cvSubImage;
+	if (params_.thresholdEnabled)
+	{
+		if (params_.autoThresholdEnabled)
+		{
+			cv::threshold(cvImageToGetLineThickness, cvImageToGetLineThickness, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+		}
+		else
+		{
+			cv::threshold(cvImageToGetLineThickness, cvImageToGetLineThickness, params_.thresholdValue, 255, CV_THRESH_BINARY);
+		}
+		
+		if (nodeSelected)
+		{
+			cv::imwrite("image_threshold.png", cvImageToGetLineThickness);
+		}
 	}
 
 	//find line thickness for sloped horizontal line:
 	std::vector<double> sumsSloped;
-	AlgorithmsImages::sumIntensityHorizontallyWithSlope(cvSubImage, angle, sumsSloped);
+	AlgorithmsImages::sumIntensityHorizontallyWithSlope(cvImageToGetLineThickness, angle, sumsSloped);
 	int thicknessLineSloped = -1;
-	AlgorithmsImages::getLineThickness(sumsSloped, thicknessLineSloped);
+	AlgorithmsImages::getLineThickness(sumsSloped, peakNeighborhoodLocal, blurImage, thicknessLineSloped);
 
 	//find line thickness for vertical line:
 	std::vector<double> sumsX;
-	AlgorithmsImages::sumIntensityVertically(cvSubImage, sumsX);
+	AlgorithmsImages::sumIntensityVertically(cvImageToGetLineThickness, sumsX);
 	int thicknessLineVertical = -1;
-	AlgorithmsImages::getLineThickness(sumsX, thicknessLineVertical);
+	AlgorithmsImages::getLineThickness(sumsX, peakNeighborhoodLocal, blurImage, thicknessLineVertical);
 
 	//create mask with angle:
 	NodeType nodeType = nodesSet_.getNodeType(row_local, col_local);
 	cv::Mat mask;
 	AlgorithmsImages::generateMaskWithAngle(sizeSubImageCorrected / 3, cv::Size(thicknessLineVertical, thicknessLineSloped), angle, nodeType, mask);
+
 	if (blurMask > 1)
 	{
 		//special check for even numbers, because function GaussianBlur takes only odd parameter in window size:
@@ -246,6 +284,11 @@ void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, in
 			blurMask -= 1;
 		}
 		cv::GaussianBlur(mask, mask, cv::Size(blurMask, blurMask), 0, 0, cv::BORDER_DEFAULT);
+	}
+
+	if (nodeSelected)
+	{
+		cv::imwrite("image_mask.png", mask);
 	}
 	
 	//calculate subimage extents:
@@ -266,7 +309,10 @@ void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, in
 	cv::Point delta = nodesSetBase_.at(row_local, col_local) - nodeNew;
 	double distance = sqrt(delta.x * delta.x + delta.y * delta.y);
 	int cellSide = std::min(sizeCell.width, sizeCell.height);
-	if (distance > cellSide / 10)
+
+	int maxPosErrorPercents = params_.maxPosError;
+
+	if (distance > (cellSide * (1.0 * maxPosErrorPercents / 100)))
 	{
 		problemRects_.push_back(cv::Rect(nodeNew - cv::Point(sizeCell / 2), nodeNew + cv::Point(sizeCell / 2)));
 	}
@@ -303,7 +349,7 @@ bool Model::nodeInsideOneOfRects(const cv::Point& node, int& indexOfRect)
 
 void Model::calculateCorrectionTable(int iteration)
 {
-	assert(!valid());
+	assert(valid());
 	if (!valid())
 	{
 		return;
@@ -334,10 +380,10 @@ void Model::calculateCorrectionTable(int iteration)
 	cv::fitLine(valuesY, lineOy, CV_DIST_L2, 0, 0.01, 0.01);
 	cv::Vec2d e2 = cv::Vec2d(e1[1],-e1[0]); // e2 is orth. to e1
 	//cv::Vec2d e2 = cv::Vec2d(lineOy[0], lineOy[1]); // unit ort of "y-axis" of nodes-set
-	//if (e2[1] > 0)
-	//{
-	//	e2 = -e2;
-	//}
+	if (e2[1] > 0)
+	{
+		e2 = -e2;
+	}
 
 	//calculate average size of grid cell:
 	const int c_cell_count_x = c_cols - 3;
@@ -386,8 +432,13 @@ void Model::calculateCorrectionTable(int iteration)
 		outStream16 << std::endl;
 		outStream32 << std::endl;
 	}
-	/*outStream16 << std::endl;
-	outStream16 << "Origin (pixels): " << originOfNodesSet.x << ' ' << originOfNodesSet.y << std::endl;*/
+	outStream16 << std::endl;
+	outStream16 << "Origin (pixels): " << '(' << originOfNodesSet.x << ',' << originOfNodesSet.y << ')' << std::endl;
+	outStream16 << "Angles (degree): " << std::endl;
+	double angleOxAndE1Degrees = std::atan2(e1[1], e1[0]) * (180.0 / M_PI);
+	outStream16 << "     " << "Ox and e1: " << angleOxAndE1Degrees << std::endl;
+	double angleOxAndE2Degrees = std::atan2(e2[1], e2[0]) * (180.0 / M_PI);
+	outStream16 << "     " << "e1 and e2 (abs. value): " << fabs(angleOxAndE2Degrees - angleOxAndE1Degrees) << std::endl;
 
 }
 
@@ -417,40 +468,40 @@ QVector<QRect> Model::getProblemRects() const
 
 void Model::test()
 {
-	assert(indexCur_ != INT_MIN);
-	if ( indexCur_ == INT_MIN)
-	{
-		return;
-	}
-	cv::Size sizeImage = nodesSet_.getCellSize() / 2;
-	cv::Point node = nodeCur();
-	cv::Rect roiCorrected;
-	AlgorithmsImages::getNodeSubImageROI(cvImage_, sizeImage, node, roiCorrected);
-	cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected);
+	//assert(indexCur_ != INT_MIN);
+	//if ( indexCur_ == INT_MIN)
+	//{
+	//	return;
+	//}
+	//cv::Size sizeImage = nodesSet_.getCellSize() / 2;
+	//cv::Point node = nodeCur();
+	//cv::Rect roiCorrected;
+	//AlgorithmsImages::getNodeSubImageROI(cvImage_, sizeImage, node, roiCorrected);
+	//cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected);
 
-	int row(-1);
-	int col(-1);
-	getRowColByIndex(indexCur_, row, col);
-	double angle = nodesSet_.getAngle(row, col, -1);
+	//int row(-1);
+	//int col(-1);
+	//getRowColByIndex(indexCur_, row, col);
+	//double angle = nodesSet_.getAngle(row, col, -1);
 
-	//find line thickness for vertical line:
-	std::vector<double> sumsX;
-	AlgorithmsImages::sumIntensityVertically(cvSubImage, sumsX);
-	int thicknessLineVertical = -1;
-	AlgorithmsImages::getLineThickness(sumsX, thicknessLineVertical);
+	////find line thickness for vertical line:
+	//std::vector<double> sumsX;
+	//AlgorithmsImages::sumIntensityVertically(cvSubImage, sumsX);
+	//int thicknessLineVertical = -1;
+	//AlgorithmsImages::getLineThickness(sumsX, peakNeighborhoodLocal, thicknessLineVertical);
 
-	//find line thickness for sloped horizontal line:
-	std::vector<double> sumsSloped;
-	AlgorithmsImages::sumIntensityHorizontallyWithSlope(cvSubImage, angle, sumsSloped);
-	int thicknessLineSloped = -1;
-	AlgorithmsImages::getLineThickness(sumsSloped, thicknessLineSloped);
+	////find line thickness for sloped horizontal line:
+	//std::vector<double> sumsSloped;
+	//AlgorithmsImages::sumIntensityHorizontallyWithSlope(cvSubImage, angle, sumsSloped);
+	//int thicknessLineSloped = -1;
+	//AlgorithmsImages::getLineThickness(sumsSloped, peakNeighborhoodLocal, thicknessLineSloped);
 
-	//create mask with angle:
-	NodeType nodeType = nodesSet_.getNodeType(row, col);
-	cv::Mat mask;
-	AlgorithmsImages::generateMaskWithAngle(sizeImage / 2, cv::Size(thicknessLineVertical, thicknessLineSloped), angle, nodeType, mask);
-	cv::imwrite("image_real.png", cvSubImage);
-	cv::imwrite("image_mask.png", mask);
+	////create mask with angle:
+	//NodeType nodeType = nodesSet_.getNodeType(row, col);
+	//cv::Mat mask;
+	//AlgorithmsImages::generateMaskWithAngle(sizeImage / 2, cv::Size(thicknessLineVertical, thicknessLineSloped), angle, nodeType, mask);
+	//cv::imwrite("image_real.png", cvSubImage);
+	//cv::imwrite("image_mask.png", mask);
 }
 
 
@@ -472,63 +523,24 @@ bool Model::valid()
 	return (!cvImage_.empty() && !nodesSet_.empty());
 }
 
-void Model::doOperation(const Operation& operation, const QVariantList& operationParameters)
+void Model::doOperation(const Operation& operation)
 {
-	int rows_count(-1);
-	int cols_count(-1);
-	int iteration(-1);
-	double cell_size_factor(-1.0);
-	int blurImage(-1);
-	int blurMask(-1);
+	const Parameters& p = params_;
 
 	switch (operation)
 	{
 
 	case OPERATION_FIND_NODES_APPROX:
-		assert(operationParameters.size() == 2);
-		if (operationParameters.size() != 2)
-		{
-			return;
-		}
-		rows_count = operationParameters[0].toInt();
-		cols_count = operationParameters[1].toInt();
-		findNodesApproximately(rows_count, cols_count);
+		findNodesApproximately(p.gridRows, p.gridCols, p.peakNeighGlobal);
 		break;
 
 	case OPERATION_FIND_NODES_ACCURATE:
-		assert(operationParameters.size() == 5);
-		if (operationParameters.size() != 5)
-		{
-			return;
-		}
-		rows_count = operationParameters[0].toInt();
-		cols_count = operationParameters[1].toInt();
-		cell_size_factor = operationParameters[2].toDouble();
-		blurImage = operationParameters[3].toInt();
-		blurMask = operationParameters[4].toInt();
-		findNodesAccurately(rows_count, cols_count, cell_size_factor, blurImage, blurMask);
+
+		findNodesAccurately(p.gridRows, p.gridCols, p.cellSizeFactor, p.blurImage, p.blurMask, p.peakNeighLocal);
 		break;
 	case OPERATION_FIND_SINGLE_NODE_ACCURATE:
-		assert(operationParameters.size() == 3);
-		if (operationParameters.size() != 3)
-		{
-			return;
-		}
-		cell_size_factor = operationParameters[0].toDouble();
-		blurImage = operationParameters[1].toInt();
-		blurMask = operationParameters[2].toInt();
-		findSingleNodeAccurately(-1, -1, cell_size_factor, blurImage, blurMask, true);
-		break;
 
-	case OPERATION_WRITE_CORRECTION_TABLE:
-		assert(operationParameters.size() == 1);
-		if (operationParameters.size() != 1)
-		{
-			return;
-		}
-		iteration = operationParameters[0].toInt();
-
-		calculateCorrectionTable(iteration);
+		findSingleNodeAccurately(-1, -1, p.cellSizeFactor, p.blurImage, p.blurMask, p.peakNeighLocal, true);
 		break;
 
 	default:
@@ -555,6 +567,21 @@ void Model::getRowColByIndex(int index, int& row, int& col)
 {
 	row = index / nodesSet_.cols();
 	col = index % nodesSet_.cols();
+}
+
+void Model::setParams(const Parameters& params)
+{
+	params_ = params;
+}
+
+void Model::removeProblemRect(int index)
+{
+	bool indexCorrect = (0 <= index) && (index < problemRects_.size());
+	assert(indexCorrect);
+	if (indexCorrect)
+	{
+		problemRects_.erase(problemRects_.begin() + index);
+	}
 }
 
 cv::Matx<double, 3, 3> getScansTrans(const NodesSet& nodesSet, const cv::Point& origin)

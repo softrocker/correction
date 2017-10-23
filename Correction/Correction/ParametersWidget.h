@@ -7,6 +7,7 @@
 class QComboBox;
 class QDoubleSpinBox;
 class QSpinBox;
+class QCheckBox;
 
 class ParametersWidget : public QWidget
 {
@@ -17,6 +18,7 @@ public:
 	void updateParameters();
 	void setParameters(const Parameters& params);
 	Parameters getParameters();
+ void	blockAllSignals(bool block);
 	~ParametersWidget();
 signals:
 	void parametersChangedS(const Parameters& params);
@@ -25,6 +27,16 @@ private:
 	QDoubleSpinBox* spinboxCellSizeFactor_;
 	QSpinBox* spinboxBlurImage_;
 	QSpinBox* spinboxBlurMask_;
+	QSpinBox* spinboxMaxPosError_;
+
+	QSpinBox* spinboxPeakNeighborhoodGlobal_;
+	QSpinBox* spinboxPeakNeighborhoodLocal_;
+
+	QCheckBox* checkboxThresholdEnabled_;
+	QSpinBox* spinboxThresholdValue_;
+	QCheckBox* checkboxAutoThresholdEnabled_;
+
+	QComboBox* comboboxSmoothingAlgorithm_;
 };
 
 enum GridSize

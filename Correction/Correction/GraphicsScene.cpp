@@ -79,7 +79,6 @@ void GraphicsScene::addProblemRectItems(const QVector<QRect>& problemRects)
 		pen.setWidth(problemRects[i].width() / 10);
 		QGraphicsRectItem* item = addRect(problemRects[i], pen);
 		item->setTransformOriginPoint(problemRects[i].center());
-		//item->setScale(scale_);
 		problemItems_.push_back(item);
 	}
 }
@@ -98,6 +97,21 @@ void GraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
 	if (event->button() != Qt::RightButton)
 	{
 		return;
+	}
+
+	if ((event->modifiers() & Qt::ControlModifier) && (event->button() == Qt::RightButton))
+	{
+		for (int i = 0; i < problemItems_.size(); i++)
+		{
+			auto problemItem = problemItems_[i];
+			if (problemItem->rect().contains(event->scenePos()))
+			{
+				emit problemRectDeletedS(i);
+				removeItem(problemItem);
+				problemItems_.erase(problemItems_.begin() + i);
+				return;
+			}
+		}
 	}
 
 	const double c_distance_limit = 10 * scale_;
@@ -158,4 +172,11 @@ void GraphicsScene::setScale(double scaleFactor)
 		nodesItems_[i]->setTransformOriginPoint(nodesItems_[i]->rect().center());
 		nodesItems_[i]->setScale(scale_);
 	}
+}
+
+void GraphicsScene::deleteAllVisualizaton()
+{
+	deleteImageBlocks();
+	deleteNodesItems();
+	deleteProblemRectItems();
 }

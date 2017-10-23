@@ -6,8 +6,6 @@
 #include "AlgorithmsImages.h"
 
 #include <opencv2/highgui/highgui.hpp>
-//#include <QPointF>
-
 
 Controller::Controller(Model* model, GraphicsScene* scene)
 {
@@ -34,6 +32,8 @@ Controller::Controller(Model* model, GraphicsScene* scene)
 		model->getRowColByIndex(indexNode, row, col);
 		emit nodeSelectedS(row, col);
 	});
+
+	connect(scene, &GraphicsScene::problemRectDeletedS, model, &Model::removeProblemRect);
 }
 
 Controller::~Controller()
@@ -44,10 +44,17 @@ Controller::~Controller()
 void Controller::loadImage()
 {
 	cv::Mat cvImage;
-	DataTransfer::loadCvImage(NULL, cvImage);
-	if (cvImage.empty())
+	QString imgName = DataTransfer::imageName(NULL);
+	if (imgName.isEmpty())
+	{
 		return;
-	scene_->deleteImageBlocks();
+	}
+	scene_->deleteAllVisualizaton();
+	DataTransfer::loadCvImage(NULL, imgName, cvImage);
+	if (cvImage.empty())
+	{
+		return;
+	}
 	model_->setImage(cvImage);
 	ImageDisplay imageDisplay;
 	createVisualImageBlocks(cvImage, imageDisplay);
@@ -62,3 +69,53 @@ void Controller::createVisualImageBlocks(const cv::Mat& cvImage, ImageDisplay& i
 	const int c_block_height = 2000;
 	AlgorithmsImages::createVisualImageBlocks(cvImage, c_block_width, c_block_height, imageDisplay);
 }
+
+//void Controller::doOperation(const Operation& operation)
+//{
+//	switch (operation)
+//	{
+//
+//	case OPERATION_FIND_NODES_APPROX:
+//		findNodesApproximately(rows_count, cols_count);
+//		break;
+//
+//	case OPERATION_FIND_NODES_ACCURATE:
+//		assert(operationParameters.size() == 5);
+//		if (operationParameters.size() != 5)
+//		{
+//			return;
+//		}
+//		rows_count = operationParameters[0].toInt();
+//		cols_count = operationParameters[1].toInt();
+//		cell_size_factor = operationParameters[2].toDouble();
+//		blurImage = operationParameters[3].toInt();
+//		blurMask = operationParameters[4].toInt();
+//		findNodesAccurately(rows_count, cols_count, cell_size_factor, blurImage, blurMask);
+//		break;
+//	case OPERATION_FIND_SINGLE_NODE_ACCURATE:
+//		assert(operationParameters.size() == 3);
+//		if (operationParameters.size() != 3)
+//		{
+//			return;
+//		}
+//		cell_size_factor = operationParameters[0].toDouble();
+//		blurImage = operationParameters[1].toInt();
+//		blurMask = operationParameters[2].toInt();
+//		findSingleNodeAccurately(-1, -1, cell_size_factor, blurImage, blurMask, true);
+//		break;
+//
+//	case OPERATION_WRITE_CORRECTION_TABLE:
+//		assert(operationParameters.size() == 1);
+//		if (operationParameters.size() != 1)
+//		{
+//			return;
+//		}
+//		iteration = operationParameters[0].toInt();
+//
+//		calculateCorrectionTable(iteration);
+//		break;
+//
+//	default:
+//		break;
+//	}
+//}
