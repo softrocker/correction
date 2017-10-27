@@ -138,7 +138,7 @@ void Model::clarifyNodes2(const cv::Mat& cvImage, NodesSet& nodesSet)
 			cv::Point node = nodesSet.at(row, col);
 			cv::Size sizeSubImage(cellSize.width, cellSize.height);
 			cv::Rect roiSubImage;
-			AlgorithmsImages::getNodeSubImageROI(cvImage, sizeSubImage, node, roiSubImage);
+			AlgorithmsImages::getNodeSubImageROI(cvImage.size(), sizeSubImage, node, roiSubImage);
 			cv::Mat cvSubImage = cv::Mat(cvImage, cv::Rect(roiSubImage.tl(), roiSubImage.br()));
 
 			//integrate subImage along Y-axis:
@@ -169,6 +169,8 @@ void Model::findNodesAccurately(int rows, int cols, double cellSizeFactor, int b
 	{
 		return;
 	}
+
+	problemRects_.clear();
 
 	for (int row = 0; row < nodesSet_.rows(); row++)
 	{
@@ -206,8 +208,8 @@ void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, in
 	cv::Rect roiCorrected;
 	cv::Size sizeCell = nodesSet_.getCellSize();
 	cv::Size sizeSubImage = cv::Size(static_cast<int>(sizeCell.width * cellSizeFactor), static_cast<int>(sizeCell.height * cellSizeFactor));
-	AlgorithmsImages::getNodeSubImageROI(cvImage_, sizeSubImage, node, roiCorrected);
-	cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected);
+	AlgorithmsImages::getNodeSubImageROI(cvImage_.size(), sizeSubImage, node, roiCorrected);
+	cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected).clone();
 	cv::Size sizeSubImageCorrected = cvSubImage.size();
 
 	cv::Mat cvSubImageBlurred;
@@ -435,9 +437,9 @@ void Model::calculateCorrectionTable(int iteration)
 	outStream16 << std::endl;
 	outStream16 << "Origin (pixels): " << '(' << originOfNodesSet.x << ',' << originOfNodesSet.y << ')' << std::endl;
 	outStream16 << "Angles (degree): " << std::endl;
-	double angleOxAndE1Degrees = std::atan2(e1[1], e1[0]) * (180.0 / M_PI);
+	double angleOxAndE1Degrees = Algorithms::angleRadiansToDegrees(std::atan2(e1[1], e1[0]));
 	outStream16 << "     " << "Ox and e1: " << angleOxAndE1Degrees << std::endl;
-	double angleOxAndE2Degrees = std::atan2(e2[1], e2[0]) * (180.0 / M_PI);
+	double angleOxAndE2Degrees = Algorithms::angleRadiansToDegrees(std::atan2(e2[1], e2[0]));
 	outStream16 << "     " << "e1 and e2 (abs. value): " << fabs(angleOxAndE2Degrees - angleOxAndE1Degrees) << std::endl;
 
 }
@@ -512,7 +514,6 @@ void Model::setNodePosition(int index, int posX, int posY)
 	int col = index % nodesSet_.cols();
 	cv::Point node = cv::Point(posX, posY);
 	nodesSet_.setNode(row, col, node);
-	//nodeCur_ = node;
 	indexCur_ = index;
 }
 

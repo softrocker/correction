@@ -10,6 +10,7 @@
 #include <QSettings>
 #include <QProgressBar>
 #include <QThread>
+#include <QKeyEvent>
 
 #include <iostream>
 #include <string>
@@ -95,7 +96,7 @@ void MainWindow::createActions()
 		blockButtons(true);
 	});
 
-	actionFindSingleNodeAccurately_ = new QAction(tr("Find single node accurately"), this);
+	actionFindSingleNodeAccurately_ = new QAction(tr("Find single node accurately (Ctrl + F)"), this);
 	actionFindSingleNodeAccurately_->setStatusTip(tr("Find single node accurately"));
 	connect(actionFindSingleNodeAccurately_, &QAction::triggered, controller_,
 		[&](bool checked)
@@ -320,4 +321,13 @@ void MainWindow::blockButtons(bool block)
 	actionTest_->setDisabled(block);
 	actionIter0_->setDisabled(block);
 	actionIter1_->setDisabled(block);
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+	if ((event->key() == Qt::Key_F) && (event->modifiers().testFlag(Qt::ControlModifier)))
+	{
+		model_->setParams(params_);
+		controller_->doOperationS(OPERATION_FIND_SINGLE_NODE_ACCURATE);
+	}
 }

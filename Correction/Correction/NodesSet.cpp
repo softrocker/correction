@@ -126,7 +126,7 @@ bool NodesSet::empty()
 	return nodes_.empty();
 }
 
-float NodesSet::getAngle(int row, int col, int dir) 
+double NodesSet::getAngle(int row, int col, int dir) 
 {
 	assert(!empty());
 	assert(row >= 0 && row < rows() && col >= 0 && col < cols());

@@ -9,7 +9,7 @@ class GraphicsScene;
 class ImageDisplay;
 class Model;
 
-extern enum Operation;
+enum Operation;
 Q_DECLARE_METATYPE(Operation)
 
 class Controller : public QObject

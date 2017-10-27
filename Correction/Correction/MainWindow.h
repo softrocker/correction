@@ -44,6 +44,7 @@ private:
 	void setParameters(const Parameters& params);
 	void setProgress(int progressPercents);
 	void blockButtons(bool block);
+	virtual	void keyPressEvent(QKeyEvent *event);
 private:
 	Controller* controller_;
 

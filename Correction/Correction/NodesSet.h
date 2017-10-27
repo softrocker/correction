@@ -27,7 +27,7 @@ public:
 	cv::Mat_<cv::Point> getNodes() const;
 	cv::Size getCellSize() const;
 	NodeType getNodeType(int row, int col);
-	float getAngle(int row, int col, int dir); // returns approximate value of angle (in radians) of the cross (by approximately found nodes)
+	double getAngle(int row, int col, int dir); // returns approximate value of angle (in radians) of the cross (by approximately found nodes)
 	void setNode(int row, int col, const cv::Point& p);
 
 	std::vector<cv::Point> row(int index) const;

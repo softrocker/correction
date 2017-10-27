@@ -122,90 +122,6 @@ void AlgorithmsImages::sumIntensityHorizontallyWithSlope(const cv::Mat& cvImage,
 	}
 }
 
-
-void AlgorithmsImages::generateMask(const cv::Size& sizeImage, const cv::Size& sizeLine, NodeType nodeType, cv::Mat& mask)
-{
-	//create matrix of size (sizeLize x 3):
-	mask.create(sizeImage, CV_8UC1);
-	mask = cv::Scalar(0);
-
-	//enumerate mask blocks:
-	const int c_width_image = sizeImage.width;
-	const int c_height_image = sizeImage.height;
-	const int c_width_line = sizeLine.width;
-	const int c_height_line = sizeLine.height;
-
-	cv::Size sizeBlockEmpty = cv::Size((c_width_image - c_width_line) / 2, (c_height_image - c_height_line) / 2);
-	cv::Mat blockTopLeft = cv::Mat(mask, cv::Rect(0, 0, sizeBlockEmpty.width, sizeBlockEmpty.height));
-	cv::Mat blockTop = cv::Mat(mask, cv::Rect(sizeBlockEmpty.width, 0, c_width_line, sizeBlockEmpty.height));
-	cv::Mat blockTopRight = cv::Mat(mask, cv::Rect(sizeBlockEmpty.width + c_width_line, 0, sizeBlockEmpty.width, sizeBlockEmpty.height));
-	cv::Mat blockLeft = cv::Mat(mask, cv::Rect(0, sizeBlockEmpty.height, sizeBlockEmpty.width, c_height_line));
-	cv::Mat blockCenter = cv::Mat(mask, cv::Rect(sizeBlockEmpty.width, sizeBlockEmpty.height, c_width_line, c_height_line));
-	cv::Mat blockRight = cv::Mat(mask, cv::Rect(sizeBlockEmpty.width + c_width_line, sizeBlockEmpty.height, sizeBlockEmpty.width, c_height_line));
-	cv::Mat blockBottomLeft = cv::Mat(mask, cv::Rect(0, sizeBlockEmpty.height + c_height_line, sizeBlockEmpty.width, sizeBlockEmpty.height));
-	cv::Mat blockBottom = cv::Mat(mask, cv::Rect(sizeBlockEmpty.width, sizeBlockEmpty.height + c_height_line, c_width_line, sizeBlockEmpty.height));
-	cv::Mat blockBottomRight = cv::Mat(mask, cv::Rect(sizeBlockEmpty.width + c_width_line, sizeBlockEmpty.height + c_height_line, sizeBlockEmpty.width, sizeBlockEmpty.height));
-	switch (nodeType)
-	{
-	case NODETYPE_CENTER:
-		blockCenter = cv::Scalar(255);
-		blockLeft = cv::Scalar(255);
-		blockRight = cv::Scalar(255);
-		blockTop = cv::Scalar(255);
-		blockBottom = cv::Scalar(255);
-		break;
-	case NODETYPE_TOP_LEFT:
-		blockCenter = cv::Scalar(255);
-		blockRight = cv::Scalar(255);
-		blockBottom = cv::Scalar(255);
-		break;
-	case NODETYPE_TOP_RIGHT:
-		blockCenter = cv::Scalar(255);
-		blockLeft = cv::Scalar(255);
-		blockBottom = cv::Scalar(255);
-		break;
-	case NODETYPE_BOTTOM_LEFT:
-		blockCenter = cv::Scalar(255);
-		blockRight = cv::Scalar(255);
-		blockTop = cv::Scalar(255);
-		break;
-	case NODETYPE_BOTTOM_RIGHT:
-		blockCenter = cv::Scalar(255);
-		blockLeft = cv::Scalar(255);
-		blockTop = cv::Scalar(255);
-		break;
-	case NODETYPE_LEFT:
-		blockCenter = cv::Scalar(255);
-		blockRight = cv::Scalar(255);
-		blockTop = cv::Scalar(255);
-		blockBottom = cv::Scalar(255);
-		break;
-	case NODETYPE_TOP:
-		blockCenter = cv::Scalar(255);
-		blockLeft = cv::Scalar(255);
-		blockRight = cv::Scalar(255);
-		blockBottom = cv::Scalar(255);
-		break;
-	case NODETYPE_RIGHT:
-		blockCenter = cv::Scalar(255);
-		blockLeft = cv::Scalar(255);
-		blockTop = cv::Scalar(255);
-		blockBottom = cv::Scalar(255);
-		break;
-	case NODETYPE_BOTTOM:
-		blockCenter = cv::Scalar(255);
-		blockLeft = cv::Scalar(255);
-		blockRight = cv::Scalar(255);
-		blockTop = cv::Scalar(255);
-		break;
-	default:
-		break;
-	}
-
-	//depends on nodeType, fill corresponding blocks of mask:
-}
-
-
 void AlgorithmsImages::generateMaskWithAngle(const cv::Size& sizeImage, const cv::Size& sizeLine, double angleRadians, NodeType nodeType, cv::Mat& mask)
 {
 	//create matrix of size (sizeLize x 3):
@@ -265,39 +181,39 @@ void AlgorithmsImages::clearExtraLines(const Parall_m& parallVertical, const Par
 	case NODETYPE_CENTER:
 		break;
 	case NODETYPE_TOP_LEFT:
-		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_TOP, mask);
-		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_LEFT, mask);
+		clearMaskPart(parallVertical, parallHorizontal, MASK_PART_TOP, mask);
+		clearMaskPart(parallVertical, parallHorizontal, MASK_PART_LEFT, mask);
 		break;
 	case NODETYPE_TOP_RIGHT:
-		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_TOP, mask);
-		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_RIGHT, mask);
+		clearMaskPart(parallVertical, parallHorizontal, MASK_PART_TOP, mask);
+		clearMaskPart(parallVertical, parallHorizontal, MASK_PART_RIGHT, mask);
 		break;
 	case NODETYPE_BOTTOM_LEFT:
-		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_BOTTOM, mask);
-		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_LEFT, mask);
+		clearMaskPart(parallVertical, parallHorizontal, MASK_PART_BOTTOM, mask);
+		clearMaskPart(parallVertical, parallHorizontal, MASK_PART_LEFT, mask);
 		break;
 	case NODETYPE_BOTTOM_RIGHT:
-		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_BOTTOM, mask);
-		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_RIGHT, mask);
+		clearMaskPart(parallVertical, parallHorizontal, MASK_PART_BOTTOM, mask);
+		clearMaskPart(parallVertical, parallHorizontal, MASK_PART_RIGHT, mask);
 		break;
 	case NODETYPE_LEFT:
-		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_LEFT, mask);
+		clearMaskPart(parallVertical, parallHorizontal, MASK_PART_LEFT, mask);
 		break;
 	case NODETYPE_TOP:
-		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_TOP, mask);
+		clearMaskPart(parallVertical, parallHorizontal, MASK_PART_TOP, mask);
 		break;
 	case NODETYPE_RIGHT:
-		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_RIGHT, mask);
+		clearMaskPart(parallVertical, parallHorizontal, MASK_PART_RIGHT, mask);
 		break;
 	case NODETYPE_BOTTOM:
-		clearExtraLine(parallVertical, parallHorizontal, MASK_PART_BOTTOM, mask);
+		clearMaskPart(parallVertical, parallHorizontal, MASK_PART_BOTTOM, mask);
 		break;
 	default:
 		break;
 	}
 }
 
-void AlgorithmsImages::clearExtraLine(const Parall_m& parallVertical, const Parall_m& parallHorizontal, MaskPart maskPart, cv::Mat& mask)
+void AlgorithmsImages::clearMaskPart(const Parall_m& parallVertical, const Parall_m& parallHorizontal, MaskPart maskPart, cv::Mat& mask)
 {
 	switch (maskPart)
 	{
@@ -371,47 +287,21 @@ void AlgorithmsImages::getLineThickness(const std::vector<double>& sums, int pea
 		cv::GaussianBlur(sums, sumsSmooth, cv::Size(blur, 1), 0, 0, cv::BORDER_REPLICATE);
 	}
 
-	//sumToSumByStrips(sums, 5, sumsSmooth);
-
 	std::vector<double> derivatives;
 	Algorithms::differentiate(sumsSmooth, derivatives);
 	Algorithms::nullifyBounds(derivatives.size() / 10, derivatives);
-	//DataTransfer::saveValuesToFile(sumsSmooth, "sums_smooth.txt");
-	//DataTransfer::saveValuesToFile(derivatives, "derivatives.txt");
 
 	std::vector<int> peaks;
 	Algorithms::findPeaks(derivatives, 2, peakNeighborhood, peaks);
 	thickness = peaks[1] - peaks[0];
 }
 
-void AlgorithmsImages::findCrosshair(const cv::Mat& cvSubImage, const cv::Point& posImage, cv::Point& crosshair)
-{
-	cv::Mat cvImageBlurred;
-	cv::GaussianBlur(cvSubImage, cvImageBlurred, cv::Size(7, 7), 1, 1);
-
-	std::vector<double> sumsAlongY;
-	sumIntensityVertically(cvImageBlurred, sumsAlongY);
-	std::vector<double> derivativesX;
-	Algorithms::differentiate(sumsAlongY, derivativesX);
-	std::vector<int> peaksX;
-	Algorithms::findPeaks(derivativesX, 2, 3, peaksX);
-	crosshair.x = (peaksX[1] + peaksX[0]) / 2 + posImage.x;
-
-	std::vector<double> sumsAlongX;
-	sumIntensityHorizontally(cvImageBlurred, sumsAlongX);
-	std::vector<double> derivativesY;
-	Algorithms::differentiate(sumsAlongX, derivativesY);
-	std::vector<int> peaksY;
-	Algorithms::findPeaks(derivativesY, 2, 3, peaksY);
-	crosshair.y = (peaksY[1] + peaksY[0]) / 2 + posImage.y;
-}
-
-void AlgorithmsImages::getNodeSubImageROI(const cv::Mat& cvImage, const cv::Size& sizeROI, const cv::Point& node, cv::Rect& ROIcorrected)
+void AlgorithmsImages::getNodeSubImageROI(const cv::Size& cvImageSize, const cv::Size& sizeROI, const cv::Point& node, cv::Rect& ROIcorrected)
 {
 	int left = std::max(0, node.x - sizeROI.width / 2);
-	int right = std::min(cvImage.cols - 1, node.x + sizeROI.width / 2);
+	int right = std::min(cvImageSize.width - 1, node.x + sizeROI.width / 2);
 	int top = std::max(0, node.y - sizeROI.height / 2);
-	int bottom = std::min(cvImage.rows - 1, node.y + sizeROI.height / 2);
+	int bottom = std::min(cvImageSize.height - 1, node.y + sizeROI.height / 2);
 	ROIcorrected = cv::Rect(cv::Point(left, top), cv::Point(right, bottom));
 }
 
@@ -445,52 +335,6 @@ void AlgorithmsImages::getImageExtents(const cv::Mat& cvImage, const cv::Size& s
 	if (c_bottom_border < c_bottom)
 	{
 		bottomExt = c_bottom - c_bottom_border;
-	}
-}
-
-void AlgorithmsImages::expandImage(NodeType nodeType, cv::Mat& cvImage)
-{
-	assert(nodeType != NODETYPE_CENTER);
-	if (nodeType == NODETYPE_CENTER)
-	{
-		return;
-	}
-	int extent = abs(cvImage.cols - cvImage.rows);
-
-	switch (nodeType)
-	{
-	case NODETYPE_INVALID:
-		return;
-		break; // no matter :)
-	case NODETYPE_CENTER:
-		return;
-		break;
-	case NODETYPE_TOP_LEFT:
-		cv::copyMakeBorder(cvImage, cvImage, extent, 0, extent, 0, cv::BORDER_CONSTANT);
-		break;
-	case NODETYPE_TOP_RIGHT:
-		cv::copyMakeBorder(cvImage, cvImage, extent, 0, 0, extent, cv::BORDER_CONSTANT);
-		break;
-	case NODETYPE_BOTTOM_LEFT:
-		cv::copyMakeBorder(cvImage, cvImage, 0, extent, extent, 0, cv::BORDER_CONSTANT);
-		break;
-	case NODETYPE_BOTTOM_RIGHT:
-		cv::copyMakeBorder(cvImage, cvImage, 0, extent, 0, extent, cv::BORDER_CONSTANT);
-		break;
-	case NODETYPE_LEFT:
-		cv::copyMakeBorder(cvImage, cvImage, 0, 0, extent, 0, cv::BORDER_CONSTANT);
-		break;
-	case NODETYPE_TOP:
-		cv::copyMakeBorder(cvImage, cvImage, extent, 0, 0, 0, cv::BORDER_CONSTANT);
-		break;
-	case NODETYPE_RIGHT:
-		cv::copyMakeBorder(cvImage, cvImage, 0, 0, 0, extent, cv::BORDER_CONSTANT);
-		break;
-	case NODETYPE_BOTTOM:
-		cv::copyMakeBorder(cvImage, cvImage, 0, extent, 0, 0, cv::BORDER_CONSTANT);
-		break;
-	default:
-		break;
 	}
 }
 

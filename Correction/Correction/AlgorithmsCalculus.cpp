@@ -50,14 +50,6 @@ double Algorithms::angleRadiansToDegrees(double angleRadians)
 	return  angleRadians * (180.0 / M_PI);
 }
 
-
-double Algorithms::constrainAngle(double angle) {
-	angle = fmod(angle + 180, 360);
-	if (angle < 0)
-		angle += 360;
-	return angle - 180;
-}
-
 int Algorithms::sign(double x)
 {
 	if (numbersEqual(x, 0))
