@@ -1,14 +1,24 @@
 #include <QGraphicsPixmapItem>
 #include <QGraphicsSceneMouseEvent>
+#include <QKeyEvent>
 #include "GraphicsScene.h"
 #include "ImageDisplay.h"
 #include "AlgorithmsCalculus.h"
 
-GraphicsScene::GraphicsScene(QObject* parent) : QGraphicsScene(parent)
+GraphicsScene::GraphicsScene(QObject* parent) : QGraphicsScene(parent) 
 {
 	nodeSelected = false;
 	nodeSelectedIndex = -1;
 	scale_ = 1.0;
+	instrument_ = InstrumentCursor;
+	selectionRectItem_ = new QGraphicsRectItem(QRectF(0,0,0,0));
+	QPen pen;
+	pen.setWidth(5);
+	pen.setColor(QColor(255,255,0));
+	selectionRectItem_->setPen(pen);
+	selectionRectItem_->setZValue(10);
+	addItem(selectionRectItem_);
+	selectingMode = false;
 }
 
 void GraphicsScene::addImageBlocks(const ImageDisplay& imageDisplay)
@@ -40,6 +50,24 @@ void GraphicsScene::deleteImageBlocks()
 		delete imageBlockItems_[i]; // clear allocated memory
 	}
 	imageBlockItems_.clear(); 
+}
+
+void GraphicsScene::updateImageBlock(int indexOfBlock, const QImage& imgBlock)
+{
+	QPointF pos = imageBlockItems_[indexOfBlock]->scenePos();
+	removeItem(imageBlockItems_[indexOfBlock]);
+	delete imageBlockItems_[indexOfBlock];
+	imageBlockItems_[indexOfBlock] = new QGraphicsPixmapItem(QPixmap::fromImage(imgBlock, Qt::AutoColor));
+	addItem(imageBlockItems_[indexOfBlock]);
+	imageBlockItems_[indexOfBlock]->setPos(pos);
+}
+
+void GraphicsScene::updateImageBlocks(const QVector<int>& indexesOfBlocks, const QVector<QImage>& imageBlocks)
+{
+	for (int i = 0; i < indexesOfBlocks.size(); i++)
+	{
+		updateImageBlock(indexesOfBlocks[i], imageBlocks[i]);
+	}
 }
 
 void GraphicsScene::addNodesItems(const QVector<QPoint>& nodesPositions)
@@ -99,63 +127,94 @@ void GraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent* event)
 		return;
 	}
 
-	if ((event->modifiers() & Qt::ControlModifier) && (event->button() == Qt::RightButton))
+	if (instrument_ == InstrumentCursor)
 	{
-		for (int i = 0; i < problemItems_.size(); i++)
+		
+		if ((event->modifiers() & Qt::ControlModifier) && (event->button() == Qt::RightButton))
 		{
-			auto problemItem = problemItems_[i];
-			if (problemItem->rect().contains(event->scenePos()))
+			for (int i = 0; i < problemItems_.size(); i++)
 			{
-				emit problemRectDeletedS(i);
-				removeItem(problemItem);
-				problemItems_.erase(problemItems_.begin() + i);
-				return;
+				auto problemItem = problemItems_[i];
+				if (problemItem->rect().contains(event->scenePos()))
+				{
+					emit problemRectDeletedS(i);
+					removeItem(problemItem);
+					problemItems_.erase(problemItems_.begin() + i);
+					return;
+				}
+			}
+		}
+
+		const double c_distance_limit = 10 * scale_;
+		for (int i = 0; i < nodesItems_.size(); i++)
+		{
+			QPointF posNode = nodesItems_[i]->mapToScene(nodesItems_[i]->rect().center());
+			nodePosLast = posNode;
+			QPointF posEvent = event->scenePos();
+			QPointF dPos = posNode - posEvent;
+			qreal distance = sqrt(dPos.x() * dPos.x() + dPos.y() * dPos.y());
+			if (distance < c_distance_limit)
+			{
+				nodeSelected = true;
+				nodeSelectedIndex = i;
+				nodesItems_[i]->setBrush(QColor(0, 255, 0));
+				emit nodeSelectedS(nodeSelectedIndex);
+				break;
 			}
 		}
 	}
-
-	const double c_distance_limit = 10 * scale_;
-	for (int i = 0; i < nodesItems_.size(); i++)
+	else if (instrument_ == InstrumentRect)
 	{
-		QPointF posNode = nodesItems_[i]->mapToScene(nodesItems_[i]->rect().center());
-		nodePosLast = posNode;
-		QPointF posEvent = event->scenePos();
-		QPointF dPos = posNode - posEvent;
-		qreal distance = sqrt(dPos.x() * dPos.x() + dPos.y() * dPos.y());
-		if (distance < c_distance_limit)
-		{
-			nodeSelected = true;
-			nodeSelectedIndex = i;
-			nodesItems_[i]->setBrush(QColor(0, 255, 0));
-			emit nodeSelectedS(nodeSelectedIndex);
-			break;
-		}
+		selectingMode = true;
+		QPointF pos = event->scenePos();
+		selectionRectItem_->setRect(QRectF(pos, pos + QPoint(1, 1)));
+		selectionRectItem_->update();
+		update();
 	}
 }
 
 void GraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-	nodeSelected = false;
-	if (nodeSelectedIndex != -1)
+	if (instrument_ == InstrumentCursor)
 	{
-		QGraphicsEllipseItem* nodeItem = nodesItems_[nodeSelectedIndex];
-		nodeItem->setBrush(QColor(255, 0, 0));
-		QPointF nodePos = nodeItem->mapToScene(nodeItem->rect().center());
-		emit nodePosChangedS(nodeSelectedIndex, static_cast<int>(nodePos.x()), static_cast<int>(nodePos.y()));
+		nodeSelected = false;
+		if (nodeSelectedIndex != -1)
+		{
+			QGraphicsEllipseItem* nodeItem = nodesItems_[nodeSelectedIndex];
+			nodeItem->setBrush(QColor(255, 0, 0));
+			QPointF nodePos = nodeItem->mapToScene(nodeItem->rect().center());
+			emit nodePosChangedS(nodeSelectedIndex, static_cast<int>(nodePos.x()), static_cast<int>(nodePos.y()));
+		}
+		nodeSelectedIndex = -1;
 	}
-	nodeSelectedIndex = -1;
+	else if (instrument_ == InstrumentRect)
+	{
+		selectingMode = false;
+		
+	}
 }
 
 void GraphicsScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
 	QPointF mousePos = event->scenePos();
 	emit mousePosChangedS(mousePos);
-	if (nodeSelected && (nodeSelectedIndex != -1))
+	if (instrument_ == InstrumentCursor)
 	{
-		QPointF dPos = mousePos - nodePosLast;
-		nodesItems_[nodeSelectedIndex]->moveBy(dPos.x(), dPos.y());
-		nodePosLast = mousePos;
+		if (nodeSelected && (nodeSelectedIndex != -1))
+		{
+			QPointF dPos = mousePos - nodePosLast;
+			nodesItems_[nodeSelectedIndex]->moveBy(dPos.x(), dPos.y());
+			nodePosLast = mousePos;
+		}
 	}
+	else if (instrument_ == InstrumentRect)
+	{
+		if (selectingMode)
+		{
+			selectionRectItem_->setRect(QRectF(selectionRectItem_->rect().topLeft(), event->scenePos()));
+		}
+	}
+	
 }
 
 
@@ -172,6 +231,10 @@ void GraphicsScene::setScale(double scaleFactor)
 		nodesItems_[i]->setTransformOriginPoint(nodesItems_[i]->rect().center());
 		nodesItems_[i]->setScale(scale_);
 	}
+
+	QPen pen = selectionRectItem_->pen();
+	pen.setWidthF(pen.widthF() / scaleFactor);
+	selectionRectItem_->setPen(pen);
 }
 
 void GraphicsScene::deleteAllVisualizaton()
@@ -179,4 +242,67 @@ void GraphicsScene::deleteAllVisualizaton()
 	deleteImageBlocks();
 	deleteNodesItems();
 	deleteProblemRectItems();
+}
+
+void GraphicsScene::setToolbarInstrument(ToolbarInstrument instrument)
+{
+	instrument_ = instrument;
+}
+
+void GraphicsScene::keyPressEvent(QKeyEvent *keyEvent)
+{
+	if (instrument_ == InstrumentRect)
+	{
+		if ((keyEvent->modifiers() & Qt::ControlModifier) && (keyEvent->key() == Qt::Key_A))
+		{
+			emit averageRectS(selectionRectItem_->rect().toRect().normalized());
+		}
+		else if ((keyEvent->modifiers() & Qt::ControlModifier) && (keyEvent->key() == Qt::Key_C))
+		{
+			emit setBackgroundTemplateS(selectionRectItem_->rect().toRect().normalized());
+		}
+		else if ((keyEvent->modifiers() & Qt::ControlModifier) && (keyEvent->key() == Qt::Key_V))
+		{
+			emit pasteBackgroundTemplateS(selectionRectItem_->rect().toRect().normalized());
+		}
+	}
+	else if (instrument_ == InstrumentCursor)
+	{
+		if ((keyEvent->key() == Qt::Key_F) && (keyEvent->modifiers().testFlag(Qt::ControlModifier)))
+		{
+			emit findSingleNodeS();
+		}
+	}
+}
+
+QVector<int> GraphicsScene::indexesBlocksToUpdate(const QRect& rectUpdate)
+{
+	QVector<int> indexes;
+	for (int i = 0; i < imageBlockItems_.size(); i++)
+	{
+		int blockWidth = (int)imageBlockItems_[i]->boundingRect().width();
+		int blockHeight = (int)imageBlockItems_[i]->boundingRect().height();
+		QPoint posRect = imageBlockItems_[i]->scenePos().toPoint();
+
+		QRect boundRect(posRect, (posRect + QPoint(blockWidth, blockHeight) - QPoint(1,1)));
+		if (boundRect.intersects(rectUpdate))
+		{
+			indexes.push_back(i);
+		}
+	}
+	return indexes;
+}
+
+QRect GraphicsScene::getSelectionRect()
+{
+	return selectionRectItem_->rect().toRect().normalized();
+}
+
+QRect GraphicsScene::getImageBlockRect(int indexBlock)
+{
+	int blockWidth = (int)imageBlockItems_[indexBlock]->boundingRect().width();
+	int blockHeight = (int)imageBlockItems_[indexBlock]->boundingRect().height();
+	QPoint posRect = imageBlockItems_[indexBlock]->scenePos().toPoint();
+	QRect boundRect(posRect, (posRect + QPoint(blockWidth, blockHeight) - QPoint(1, 1)));
+	return boundRect;
 }

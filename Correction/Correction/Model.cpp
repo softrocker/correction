@@ -33,6 +33,26 @@ void Model::setImage(const cv::Mat& cvImage)
 	cvImage_ = cvImage;
 }
 
+const cv::Mat& Model::getImage()
+{
+	return cvImage_;
+}
+
+void Model::calculateBlocksToUpdate(const QVector<QRect>& imageBlockRects, std::vector<cv::Mat>& imageBlocks) const
+{
+	imageBlocks.reserve(imageBlockRects.size());
+	for (int i = 0; i < imageBlockRects.size(); i++)
+	{
+		cv::Rect rect(imageBlockRects[i].x(), imageBlockRects[i].y(), imageBlockRects[i].width(), imageBlockRects[i].height());
+		imageBlocks.push_back(cv::Mat(cvImage_, rect));
+	}
+}
+
+//void Model::calculateBlocksToUpdate(const QRect& rectUpdate, int blockSizeX, int blockSizeY, std::vector<int>& indexesOfBlocks, std::vector<cv::Mat&>& imageBlocks)
+//{
+//
+//}
+
 void Model::findNodesApproximately(int rows, int cols, int peakNeighborhoodGlobal)
 {
 	assert(!cvImage_.empty());
@@ -58,10 +78,12 @@ void Model::clarifyNodes0(const cv::Mat& cvImage, NodesSet& nodesSet, int grid_r
 	//array of values sums of f(x,y) by y:
 	std::vector<double> sumsAlongY(cvImage.cols);
 	AlgorithmsImages::sumIntensityVertically(cvImage, sumsAlongY);
+	DataTransfer::saveValuesToFile(sumsAlongY, "sums_Y.txt"); 
 
 	//array of values sums of f(x,y) by X:
 	std::vector<double> sumsAlongX(cvImage.rows);
 	AlgorithmsImages::sumIntensityHorizontally(cvImage, sumsAlongX);
+	DataTransfer::saveValuesToFile(sumsAlongX, "sums_X.txt");
 
 	//finding peaks:
 	std::vector<int> peaksY;
@@ -187,7 +209,7 @@ void Model::findNodesAccurately(int rows, int cols, double cellSizeFactor, int b
 	emit updateVisualizationS();
 }
 
-void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, int blurImage, int blurMask, int peakNeighborhoodLocal, bool nodeSelected)
+void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, int blurImageSize, int blurMaskSize, int peakNeighborhoodLocal, bool nodeSelected)
 {
 	int row_local = row;
 	int col_local = col;
@@ -201,8 +223,6 @@ void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, in
 		}
 		getRowColByIndex(indexCur_, row_local, col_local);
 	}
-	
-	double angle = nodesSet_.getAngle(row_local, col_local, -1);
 
 	cv::Point& node = nodesSet_.at(row_local, col_local);
 	cv::Rect roiCorrected;
@@ -210,83 +230,38 @@ void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, in
 	cv::Size sizeSubImage = cv::Size(static_cast<int>(sizeCell.width * cellSizeFactor), static_cast<int>(sizeCell.height * cellSizeFactor));
 	AlgorithmsImages::getNodeSubImageROI(cvImage_.size(), sizeSubImage, node, roiCorrected);
 	cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected).clone();
-	cv::Size sizeSubImageCorrected = cvSubImage.size();
 
-	cv::Mat cvSubImageBlurred;
+	cv::Mat cvImageWorking = cvSubImage.clone();
 
-	bool blur = true;
-	if (blur)
+	blurImage(cvSubImage, cvImageWorking, params_.blurImageSize, params_.smoothingAlgorithm);
+	if (nodeSelected)
 	{
-		int blurSize = params_.blurImage;
-		if (blurSize > 0)
-		{
-			if (blurSize % 2 == 0)
-			{
-				blurSize -= 1;
-			}
-
-			int smoothingAlgorithm = params_.smoothingAlgorithm;
-			if (smoothingAlgorithm == SMOOTHING_GAUSS)
-			{
-				cv::GaussianBlur(cvSubImage, cvSubImageBlurred, cv::Size(blurSize, blurSize), 0, 0);
-			}
-			else if (smoothingAlgorithm == SMOOTHING_MEDIAN)
-			{
-				cv::medianBlur(cvSubImage, cvSubImageBlurred, blurSize);
-			}
-
-			if (nodeSelected)
-			{
-				cv::imwrite("image_real.png", cvSubImage);
-				cv::imwrite("image_median_blurred.png", cvSubImageBlurred);
-			}
-		}
+		cv::imwrite("image_real.png", cvSubImage);
+		cv::imwrite("image_blurred.png", cvImageWorking);
 	}
-	
-	cv::Mat cvImageToGetLineThickness = blur ? cvSubImageBlurred : cvSubImage;
-	if (params_.thresholdEnabled)
+
+	thresholdImage(cvImageWorking, cvImageWorking);
+	if (nodeSelected)
 	{
-		if (params_.autoThresholdEnabled)
-		{
-			cv::threshold(cvImageToGetLineThickness, cvImageToGetLineThickness, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-		}
-		else
-		{
-			cv::threshold(cvImageToGetLineThickness, cvImageToGetLineThickness, params_.thresholdValue, 255, CV_THRESH_BINARY);
-		}
-		
-		if (nodeSelected)
-		{
-			cv::imwrite("image_threshold.png", cvImageToGetLineThickness);
-		}
+		cv::imwrite("image_threshold.png", cvImageWorking);
 	}
 
 	//find line thickness for sloped horizontal line:
-	std::vector<double> sumsSloped;
-	AlgorithmsImages::sumIntensityHorizontallyWithSlope(cvImageToGetLineThickness, angle, sumsSloped);
-	int thicknessLineSloped = -1;
-	AlgorithmsImages::getLineThickness(sumsSloped, peakNeighborhoodLocal, blurImage, thicknessLineSloped);
+	double angle = nodesSet_.getAngle(row_local, col_local, -1);
+	int thicknessLineHorizontal = -1;
+	calculateLineThickness(cvImageWorking, SUM_HORIZONTALLY, true, angle, thicknessLineHorizontal);
 
 	//find line thickness for vertical line:
-	std::vector<double> sumsX;
-	AlgorithmsImages::sumIntensityVertically(cvImageToGetLineThickness, sumsX);
 	int thicknessLineVertical = -1;
-	AlgorithmsImages::getLineThickness(sumsX, peakNeighborhoodLocal, blurImage, thicknessLineVertical);
+	calculateLineThickness(cvImageWorking, SUM_VERTICALLY, false, angle, thicknessLineVertical);
 
 	//create mask with angle:
 	NodeType nodeType = nodesSet_.getNodeType(row_local, col_local);
 	cv::Mat mask;
-	AlgorithmsImages::generateMaskWithAngle(sizeSubImageCorrected / 3, cv::Size(thicknessLineVertical, thicknessLineSloped), angle, nodeType, mask);
+	cv::Size sizeSubImageCorrected = cvSubImage.size();
+	AlgorithmsImages::generateMaskWithAngle(sizeSubImageCorrected / 3, cv::Size(thicknessLineVertical, thicknessLineHorizontal), angle, nodeType, mask);
 
-	if (blurMask > 1)
-	{
-		//special check for even numbers, because function GaussianBlur takes only odd parameter in window size:
-		if (blurMask % 2 == 0)
-		{
-			blurMask -= 1;
-		}
-		cv::GaussianBlur(mask, mask, cv::Size(blurMask, blurMask), 0, 0, cv::BORDER_DEFAULT);
-	}
+	blurImage(mask, mask, params_.blurMaskSize, SMOOTHING_GAUSS);
 
 	if (nodeSelected)
 	{
@@ -301,6 +276,19 @@ void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, in
 	//calculate cross-correlation matrix and find maximum:
 	cv::Mat corrMatrix;
 	cv::matchTemplate(cvSubImage, mask, corrMatrix, CV_TM_CCOEFF_NORMED);
+	
+	//save cross-correlation matrix to file (grayscale and color):
+	if (nodeSelected)
+	{
+		cv::Mat corrMatrix1;
+		cv::normalize(corrMatrix, corrMatrix1, 0, 1, cv::NORM_MINMAX);
+		corrMatrix1.convertTo(corrMatrix1, CV_8UC1, 255.0);
+		cv::imwrite("image_corr.png", corrMatrix1);
+		cv::applyColorMap(corrMatrix1, corrMatrix1, cv::COLORMAP_JET);
+		cv::imwrite("image_corr_color.png", corrMatrix1);
+	}
+
+	//localize maximum of cross-correlation function:
 	double minVal; double maxVal; cv::Point minLoc; cv::Point maxLoc;
 	cv::minMaxLoc(corrMatrix, &minVal, &maxVal, &minLoc, &maxLoc);
 
@@ -336,7 +324,6 @@ void Model::findSingleNodeAccurately(int row, int col, double cellSizeFactor, in
 
 bool Model::nodeInsideOneOfRects(const cv::Point& node, int& indexOfRect)
 {
-	
 	for (int i = 0; i < problemRects_.size(); i++)
 	{
 		if (problemRects_[i].contains(node))
@@ -347,6 +334,31 @@ bool Model::nodeInsideOneOfRects(const cv::Point& node, int& indexOfRect)
 	}
 	indexOfRect = -1;
 	return false;
+}
+
+void Model::averageRect(const QRect& rect)
+{
+	cv::Rect cRect(rect.x(), rect.y(), rect.width(), rect.height());
+	cv::Rect rectCorrected = cRect & cv::Rect(0,0,cvImage_.cols, cvImage_.rows);
+	cv::Mat imageFragment = cv::Mat(cvImage_, rectCorrected);
+	imageFragment = cv::mean(imageFragment);
+	emit updateImageS();
+}
+
+void Model::setBackgroundTemplate(const QRect& rect)
+{
+	cv::Rect roi = cv::Rect(rect.x(), rect.y(), rect.width(), rect.height());
+	cv::Mat m = cv::Mat(cvImage_, roi).clone();
+	cvBackgroundTemplate_ = m;
+}
+
+
+void Model::pasteBackgroundTemplate(const QRect& rect)
+{
+	cv::Rect roi = cv::Rect(rect.x(), rect.y(), rect.width(), rect.height());
+	roi = roi & cv::Rect(0, 0, cvImage_.cols, cvImage_.rows);
+	AlgorithmsImages::fillImageFragmentByTemplate(cvImage_, roi, cvBackgroundTemplate_);
+	emit updateImageS();	
 }
 
 void Model::calculateCorrectionTable(int iteration)
@@ -411,7 +423,7 @@ void Model::calculateCorrectionTable(int iteration)
 
 	//32-bit:
 	std::ofstream outStream32("correct_32.dat");
-	outStream32 << 2 << std::endl << std::endl;
+	outStream32 << 3 << std::endl << std::endl;
 	for (int row = 0; row < c_rows; row++)
 	{
 		for (int col = 0; col < c_cols; col++)
@@ -468,46 +480,6 @@ QVector<QRect> Model::getProblemRects() const
 	return problemRects;
 }
 
-void Model::test()
-{
-	//assert(indexCur_ != INT_MIN);
-	//if ( indexCur_ == INT_MIN)
-	//{
-	//	return;
-	//}
-	//cv::Size sizeImage = nodesSet_.getCellSize() / 2;
-	//cv::Point node = nodeCur();
-	//cv::Rect roiCorrected;
-	//AlgorithmsImages::getNodeSubImageROI(cvImage_, sizeImage, node, roiCorrected);
-	//cv::Mat cvSubImage = cv::Mat(cvImage_, roiCorrected);
-
-	//int row(-1);
-	//int col(-1);
-	//getRowColByIndex(indexCur_, row, col);
-	//double angle = nodesSet_.getAngle(row, col, -1);
-
-	////find line thickness for vertical line:
-	//std::vector<double> sumsX;
-	//AlgorithmsImages::sumIntensityVertically(cvSubImage, sumsX);
-	//int thicknessLineVertical = -1;
-	//AlgorithmsImages::getLineThickness(sumsX, peakNeighborhoodLocal, thicknessLineVertical);
-
-	////find line thickness for sloped horizontal line:
-	//std::vector<double> sumsSloped;
-	//AlgorithmsImages::sumIntensityHorizontallyWithSlope(cvSubImage, angle, sumsSloped);
-	//int thicknessLineSloped = -1;
-	//AlgorithmsImages::getLineThickness(sumsSloped, peakNeighborhoodLocal, thicknessLineSloped);
-
-	////create mask with angle:
-	//NodeType nodeType = nodesSet_.getNodeType(row, col);
-	//cv::Mat mask;
-	//AlgorithmsImages::generateMaskWithAngle(sizeImage / 2, cv::Size(thicknessLineVertical, thicknessLineSloped), angle, nodeType, mask);
-	//cv::imwrite("image_real.png", cvSubImage);
-	//cv::imwrite("image_mask.png", mask);
-}
-
-
-
 void Model::setNodePosition(int index, int posX, int posY)
 {
 	int row = index / nodesSet_.cols();
@@ -537,11 +509,11 @@ void Model::doOperation(const Operation& operation)
 
 	case OPERATION_FIND_NODES_ACCURATE:
 
-		findNodesAccurately(p.gridRows, p.gridCols, p.cellSizeFactor, p.blurImage, p.blurMask, p.peakNeighLocal);
+		findNodesAccurately(p.gridRows, p.gridCols, p.cellSizeFactor, p.blurImageSize, p.blurMaskSize, p.peakNeighLocal);
 		break;
 	case OPERATION_FIND_SINGLE_NODE_ACCURATE:
 
-		findSingleNodeAccurately(-1, -1, p.cellSizeFactor, p.blurImage, p.blurMask, p.peakNeighLocal, true);
+		findSingleNodeAccurately(-1, -1, p.cellSizeFactor, p.blurImageSize, p.blurMaskSize, p.peakNeighLocal, true);
 		break;
 
 	default:
@@ -639,4 +611,117 @@ cv::Matx<double, 3, 3> getScansTrans(const NodesSet& nodesSet, const cv::Point& 
 	mx(2, 0) = 0, mx(2, 1) = 0, mx(2, 2) = 1; //mx[2][0] = 0, mx[2][1] = 0, mx[2][2] = 1;
 
 	return mx;
+}
+
+void Model::calculateLineThickness(const cv::Mat& cvImage, int sumDirection, bool slopeNeeded, double angle, int& thickness)
+{
+	std::vector<double> sums;
+	if (sumDirection == SUM_HORIZONTALLY)
+	{
+		if (slopeNeeded)
+		{
+			AlgorithmsImages::sumIntensityHorizontallyWithSlope(cvImage, angle, sums);
+		}
+		else
+		{
+			AlgorithmsImages::sumIntensityHorizontally(cvImage, sums);
+		}
+	}
+	else if (sumDirection == SUM_VERTICALLY)
+	{
+		if (slopeNeeded) // not done yet! now it is the same logic as without slope
+		{
+			AlgorithmsImages::sumIntensityVertically(cvImage, sums);
+		}
+		else
+		{
+			AlgorithmsImages::sumIntensityVertically(cvImage, sums);
+		}
+	}
+	else
+	{
+		assert(false);
+		return;
+	}
+	
+	AlgorithmsImages::getLineThickness(sums, getPeakNeighborhoodLocal(), getBlurImageSize(), thickness);
+}
+
+void Model::thresholdImage(const cv::Mat& src, cv::Mat& dst)
+{
+	if (params_.thresholdEnabled)
+	{
+		if (params_.autoThresholdEnabled)
+		{
+			cv::threshold(src, dst, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+		}
+		else
+		{
+			cv::threshold(src, dst, params_.thresholdValue, 255, CV_THRESH_BINARY);
+		}
+	}
+}
+
+void Model::blurImage(const cv::Mat& src, cv::Mat& dst, int blurSize, int smoothingAlgorithm)
+{
+	if (blurSize > 0) // if blur operator size equals 0 then no blur
+	{
+		// check for blur operator size. it must be odd!
+		if (blurSize % 2 == 0)
+		{
+			blurSize -= 1;
+		}
+
+		if (smoothingAlgorithm == SMOOTHING_GAUSS)
+		{
+			cv::GaussianBlur(src, dst, cv::Size(blurSize, blurSize), 0, 0);
+		}
+		else if (smoothingAlgorithm == SMOOTHING_MEDIAN)
+		{
+			cv::medianBlur(src, dst, blurSize);
+		}
+	}
+}
+
+int Model::getBlurImageSize()
+{
+	return params_.blurImageSize;
+}
+
+int Model::getPeakNeighborhoodLocal()
+{
+	return params_.peakNeighLocal;
+}
+
+
+
+void Model::test()
+{
+	//cv::Mat mask2;
+	//AlgorithmsImages::generateMaskWithAngle(sizeSubImageCorrected / 3, cv::Size(1, 1), angle, nodeType, mask2);
+	//cv::Mat corrMatrix2;
+	//cv::matchTemplate(cvSubImage, mask2, corrMatrix2, CV_TM_CCOEFF_NORMED);
+	//cv::normalize(corrMatrix2, corrMatrix2, 0, 1, cv::NORM_MINMAX);
+	//corrMatrix2.convertTo(corrMatrix2, CV_8UC1, 255.0);
+	//cv::applyColorMap(corrMatrix2, corrMatrix2, cv::COLORMAP_JET);
+	//cv::imwrite("image_corr_no_thickness.png", corrMatrix2);
+
+	//cv::Mat mask3;
+	//AlgorithmsImages::generateMaskWithAngle(sizeSubImageCorrected / 3, cv::Size(thicknessLineVertical, thicknessLineHorizontal), 0, nodeType, mask3);
+	//cv::Mat corrMatrix3;
+	//cv::matchTemplate(cvSubImage, mask3, corrMatrix3, CV_TM_CCOEFF_NORMED);
+	//cv::normalize(corrMatrix3, corrMatrix3, 0, 1, cv::NORM_MINMAX);
+	//corrMatrix3.convertTo(corrMatrix3, CV_8UC1, 255.0);
+	//cv::imwrite("image_corr_no_angle.png", corrMatrix3);
+	//cv::applyColorMap(corrMatrix3, corrMatrix3, cv::COLORMAP_JET);
+	//cv::imwrite("image_corr_no_angle_color.png", corrMatrix3);
+
+	//cv::Mat mask4;
+	//AlgorithmsImages::generateMaskWithAngle(sizeSubImageCorrected / 3, cv::Size(1, 1), 0, nodeType, mask4);
+	//cv::Mat corrMatrix4;
+	//cv::matchTemplate(cvSubImage, mask4, corrMatrix4, CV_TM_CCOEFF_NORMED);
+	//cv::normalize(corrMatrix4, corrMatrix4, 0, 1, cv::NORM_MINMAX);
+	//corrMatrix4.convertTo(corrMatrix4, CV_8UC1, 255.0);
+	//cv::applyColorMap(corrMatrix4, corrMatrix4, cv::COLORMAP_JET);
+	//cv::imwrite("image_corr_no_angle_no_thickness.png", corrMatrix4);
 }

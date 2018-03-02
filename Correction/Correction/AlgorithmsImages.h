@@ -16,6 +16,12 @@ enum MaskPart
 	MASK_PART_RIGHT = 3
 };
 
+enum SummationDirection
+{
+	SUM_VERTICALLY = 0,
+	SUM_HORIZONTALLY = 1
+};
+
 //parallelogramm
 struct Parall_m 
 {
@@ -73,6 +79,7 @@ namespace AlgorithmsImages
 	*/
 	void sumIntensityHorizontallyWithSlope(const cv::Mat& cvImage, double angleRadians, std::vector<double>& sums);
 
+	void sumIntensityVerticallyWithSlope(const cv::Mat& cvImage, double angleRadians, std::vector<double>& sums);
 	/*
 	Procedure calculates region of interest for given image.
 	parameters:
@@ -120,4 +127,6 @@ namespace AlgorithmsImages
 
 	/* Procedure that removes part of mask, defined by 'maskPart' parameter */
 	void clearMaskPart(const Parall_m& parallVertical, const Parall_m& parallHorizontal, MaskPart maskPart, cv::Mat& mask);
+
+	void fillImageFragmentByTemplate(cv::Mat& image, const cv::Rect& ROI, const cv::Mat& imageTemplate);
 }

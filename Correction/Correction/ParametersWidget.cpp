@@ -206,8 +206,8 @@ void ParametersWidget::setParameters(const Parameters& params)
 
 	blockAllSignals(true);
 	spinboxCellSizeFactor_->setValue(params.cellSizeFactor);
-	spinboxBlurImage_->setValue(params.blurImage);
-	spinboxBlurMask_->setValue(params.blurMask);
+	spinboxBlurImage_->setValue(params.blurImageSize);
+	spinboxBlurMask_->setValue(params.blurMaskSize);
 	spinboxMaxPosError_->setValue(params.maxPosError);
 	spinboxPeakNeighborhoodGlobal_->setValue(params.peakNeighGlobal);
 	spinboxPeakNeighborhoodLocal_->setValue(params.peakNeighLocal);
@@ -243,8 +243,8 @@ Parameters ParametersWidget::getParameters()
 	}
 
 	params.cellSizeFactor = spinboxCellSizeFactor_->value();
-	params.blurImage = spinboxBlurImage_->value();
-	params.blurMask = spinboxBlurMask_->value();
+	params.blurImageSize = spinboxBlurImage_->value();
+	params.blurMaskSize = spinboxBlurMask_->value();
 	params.maxPosError = spinboxMaxPosError_->value();
 	params.peakNeighGlobal = spinboxPeakNeighborhoodGlobal_->value();
 	params.peakNeighLocal = spinboxPeakNeighborhoodLocal_->value();

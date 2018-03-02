@@ -122,6 +122,44 @@ void AlgorithmsImages::sumIntensityHorizontallyWithSlope(const cv::Mat& cvImage,
 	}
 }
 
+void AlgorithmsImages::sumIntensityVerticallyWithSlope(const cv::Mat& cvImage, double angleRadians, std::vector<double>& sums)
+{
+	const int c_count = cvImage.rows + cvImage.cols;
+	sums.resize(c_count);
+	for (int i = 0; i < c_count; i++)
+	{
+		// find 2 points, between which we will draw line:
+		int rho = -i;
+		double theta = - angleRadians;
+		double a = cos(theta);
+		double b = sin(theta);
+		double x0 = a*rho, y0 = b*rho;
+		cv::Point pt1(cvRound(x0 + 1000 * (-b)),
+			cvRound(y0 + 1000 * (a)));
+		cv::Point pt2(cvRound(x0 - 1000 * (-b)),
+			cvRound(y0 - 1000 * (a)));
+
+		// sum points intensity along line:
+		cv::LineIterator it(cvImage, pt1, pt2, 8);
+		for (int k = 0; k < it.count; k++, ++it)
+		{
+			int value = cvImage.at<uchar>(it.pos());
+			sums[i] += value;
+		}
+		//sums[i] /= it.count;
+		if (it.count != 0)
+		{
+			sums[i] /= it.count;
+		}
+		else
+		{
+			sums.resize(i);
+			break;
+		}
+
+	}
+}
+
 void AlgorithmsImages::generateMaskWithAngle(const cv::Size& sizeImage, const cv::Size& sizeLine, double angleRadians, NodeType nodeType, cv::Mat& mask)
 {
 	//create matrix of size (sizeLize x 3):
@@ -249,6 +287,32 @@ void AlgorithmsImages::clearMaskPart(const Parall_m& parallVertical, const Paral
 	}
 }
 
+
+void AlgorithmsImages::fillImageFragmentByTemplate(cv::Mat& image, const cv::Rect& ROI, const cv::Mat& imageTemplate)
+{
+	assert(!image.empty() && !imageTemplate.empty());
+	if (image.empty() || imageTemplate.empty())
+		return;
+
+	//calculate number of subimages by vertical and horizontal:
+	cv::Size sizeImageFragment(ROI.width, ROI.height);
+	int blocksCountX = sizeImageFragment.width / imageTemplate.cols + 1;
+	int blocksCountY = sizeImageFragment.height / imageTemplate.rows + 1;
+
+	//for all images fill image:
+#pragma omp parallel for
+	for (int blockY = 0; blockY < blocksCountY; blockY++)
+	{
+		for (int blockX = 0; blockX < blocksCountX; blockX++)
+		{
+			int blockWidth = imageTemplate.cols;
+			int blockHeight = imageTemplate.rows;
+			cv::Rect rectBlock = cv::Rect(ROI.x + blockX * blockWidth, ROI.y + blockY * blockHeight, blockWidth, blockHeight);
+			rectBlock = rectBlock & ROI;
+			imageTemplate(cv::Rect(0, 0, std::min(blockWidth, rectBlock.width), std::min(blockHeight,rectBlock.height))).copyTo(image(rectBlock));
+		}
+	}
+}
 
 QImage AlgorithmsImages::Mat2QImageGray(const cv::Mat_<uchar> &src)
 {

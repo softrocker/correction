@@ -15,8 +15,14 @@ class QProgressBar;
 class Model;
 class Controller;
 class ParametersWidget;
+enum ToolbarInstrument;
+
+//class QMap;
+//class QPair;
+class QString;
 
 #include "Parameters.h"
+#include <QMap>
 
 class MainWindow : public QMainWindow
 {
@@ -28,6 +34,7 @@ public:
 
 signals:
 	void applySettingsS(const Parameters& params);
+	void changeToolbarInstrumentS(ToolbarInstrument instrument);
 private:
 	void createSettings();
 	void createMenu();
@@ -44,7 +51,8 @@ private:
 	void setParameters(const Parameters& params);
 	void setProgress(int progressPercents);
 	void blockButtons(bool block);
-	virtual	void keyPressEvent(QKeyEvent *event);
+	//virtual	void keyPressEvent(QKeyEvent *event);
+	void toolbarClicked(QAction* action);
 private:
 	Controller* controller_;
 
@@ -76,6 +84,14 @@ private:
 	Parameters params_;
 
 	QThread* threadWork_;
+
+	QToolBar* toolBar_;
+
+	//QMap<QAction*, ToolbarInstrument> mapActionsToInstruments;
+	QMap<int, QPair<QString, QString>> mapInstrumentsToIcons;
+
+	QAction* actionRect_;
+	QAction* actionCursor_;
 };
 
 #endif 

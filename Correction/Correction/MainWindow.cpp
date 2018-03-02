@@ -11,6 +11,7 @@
 #include <QProgressBar>
 #include <QThread>
 #include <QKeyEvent>
+#include <QToolBar>
 
 #include <iostream>
 #include <string>
@@ -28,7 +29,7 @@
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
 {
-	
+	setlocale(LC_CTYPE, "Russian");
 	createViewsAndScenes();
 	model_ = new Model();
 	threadWork_ = new QThread(this);
@@ -48,9 +49,14 @@ MainWindow::MainWindow(QWidget *parent)
 	connect(parametersWidget_, &ParametersWidget::parametersChangedS, this, &MainWindow::setParameters);
 	connect(controller_, &Controller::sendProgressS, this, &MainWindow::setProgress);
 	connect(controller_, &Controller::unblockButtonsS, this, [=] {blockButtons(false);});
+	connect(toolBar_, &QToolBar::actionTriggered, this, &MainWindow::toolbarClicked);
+	connect(this, &MainWindow::changeToolbarInstrumentS, scene_, &GraphicsScene::setToolbarInstrument);
+	connect(controller_, &Controller::findSingleNodeS, this, [=] {
+		model_->setParams(params_);
+		controller_->doOperationS(OPERATION_FIND_SINGLE_NODE_ACCURATE);
+	});
 
 	applyParameters();
-
 	
 }
 
@@ -135,10 +141,23 @@ void::MainWindow::createViewsAndScenes()
 
 void MainWindow::createLayouts()
 {
+	toolBar_ = new QToolBar(this);
+	actionCursor_ = new QAction(QIcon("Resources\\cursor.png"), QString(tr("Cursor")), this);
+	actionRect_ = new QAction(QIcon("Resources\\select_rect_button.png"), QString(tr("Rect")), this);
+
+	mapInstrumentsToIcons[InstrumentCursor] = QPair<QString, QString>("Resources\\cursor.png", "Resources\\cursor_clicked.png");
+	mapInstrumentsToIcons[InstrumentRect] = QPair<QString, QString>("Resources\\select_rect_button.png", "Resources\\select_rect_button_clicked.png");
+
+	toolBar_->setOrientation(Qt::Vertical);
+	toolBar_->addAction(actionCursor_);
+	toolBar_->addAction(actionRect_);
+	toolBar_->setFixedHeight(100);
+
 	QWidget* mainWidget = new QWidget(this);
 	setCentralWidget(mainWidget);
 
 	QLayout* imagesLayout = new QHBoxLayout();
+	imagesLayout->addWidget(toolBar_);
 	imagesLayout->addWidget(view_);
 	parametersWidget_ = new ParametersWidget(this);
 	imagesLayout->addWidget(parametersWidget_);
@@ -229,11 +248,11 @@ void MainWindow::loadSettings()
 	}
 	if (settings.contains("blur_image"))
 	{
-		params_.blurImage = settings.value("blur_image").toInt();
+		params_.blurImageSize = settings.value("blur_image").toInt();
 	}
 	if (settings.contains("blur_mask"))
 	{
-		params_.blurMask = settings.value("blur_mask").toInt();
+		params_.blurMaskSize = settings.value("blur_mask").toInt();
 	}
 	if (settings.contains("max_pos_error"))
 	{
@@ -276,8 +295,8 @@ void MainWindow::saveSettings()
 	settings.setValue("grid_cols", params_.gridCols);
 	settings.setValue("grid_rows", params_.gridRows);
 	settings.setValue("cell_size_factor", params_.cellSizeFactor);
-	settings.setValue("blur_image", params_.blurImage);
-	settings.setValue("blur_mask", params_.blurMask);
+	settings.setValue("blur_image", params_.blurImageSize);
+	settings.setValue("blur_mask", params_.blurMaskSize);
 	settings.setValue("max_pos_error", params_.maxPosError);
 	settings.setValue("peak_neigh_global", params_.peakNeighGlobal);
 	settings.setValue("peak_neigh_local", params_.peakNeighLocal);
@@ -323,11 +342,20 @@ void MainWindow::blockButtons(bool block)
 	actionIter1_->setDisabled(block);
 }
 
-void MainWindow::keyPressEvent(QKeyEvent *event)
+void MainWindow::toolbarClicked(QAction* action)
 {
-	if ((event->key() == Qt::Key_F) && (event->modifiers().testFlag(Qt::ControlModifier)))
+	actionCursor_->setIcon(QIcon(mapInstrumentsToIcons[InstrumentCursor].first));
+	actionRect_->setIcon(QIcon(mapInstrumentsToIcons[InstrumentRect].first));
+
+	if (action == actionCursor_)
 	{
-		model_->setParams(params_);
-		controller_->doOperationS(OPERATION_FIND_SINGLE_NODE_ACCURATE);
+		actionCursor_->setIcon(QIcon(mapInstrumentsToIcons[InstrumentCursor].second));
+		emit changeToolbarInstrumentS(InstrumentCursor);
 	}
+	else if (action == actionRect_)
+	{
+		actionRect_->setIcon(QIcon(mapInstrumentsToIcons[InstrumentRect].second));
+		emit changeToolbarInstrumentS(InstrumentRect);
+	}
+	
 }

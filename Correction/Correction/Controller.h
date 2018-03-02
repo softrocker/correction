@@ -20,6 +20,8 @@ public:
 	//Controller(QWidget* parent, Model* model, GraphicsScene* scene);
 	~Controller();
 	void loadImage();
+	void updateImage();
+	void updateImageBlocks();
 	void createVisualImageBlocks(const cv::Mat& cvImage, ImageDisplay& imageDisplay);
 //	void doOperation(const Operation& operation);
 signals:
@@ -27,6 +29,7 @@ signals:
 	void sendProgressS(int progressPercents);
 	void nodeSelectedS(int row, int col);
 	void unblockButtonsS();
+	void findSingleNodeS();
 private:
 	signals:
 	//void doOperationS(const Operation& operation, const QVariantList& params);

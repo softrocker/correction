@@ -14,14 +14,10 @@
       <Extensions>qrc;*</Extensions>
       <ParseFiles>false</ParseFiles>
     </Filter>
-    <Filter Include="Generated files">
-      <UniqueIdentifier>{7b7f341e-4e79-40a5-bc52-81706ab116d4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Generated files\Release">
-      <UniqueIdentifier>{cb06c7ff-24b2-4b99-b5e3-0e33adb86f9d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Generated files\Debug">
-      <UniqueIdentifier>{87901443-451e-42b1-a838-afc8ff252a3c}</UniqueIdentifier>
+    <Filter Include="Translation Files">
+      <UniqueIdentifier>{639EADAA-A684-42e4-A9AD-28FC9BCB8F7C}</UniqueIdentifier>
+      <Extensions>ts</Extensions>
+      <ParseFiles>false</ParseFiles>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -35,13 +31,19 @@
     <ClCompile Include="Controller.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="ParametersWidget.cpp" />
-    <ClCompile Include="GeneratedFiles\Release\moc_Controller.cpp" />
     <ClCompile Include="GeneratedFiles\Release\moc_GraphicsView.cpp" />
-    <ClCompile Include="GeneratedFiles\Release\moc_MainWindow.cpp" />
     <ClCompile Include="GeneratedFiles\Release\moc_Model.cpp" />
     <ClCompile Include="GeneratedFiles\Release\moc_ParametersWidget.cpp" />
     <ClCompile Include="AlgorithmsImages.cpp" />
-    <ClCompile Include="GeneratedFiles\Release\moc_GraphicsScene.cpp" />
+    <ClCompile Include="GeneratedFiles\Release\moc_Controller.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_GraphicsScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_MainWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataTransfer.h" />
@@ -65,5 +67,8 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Correction.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="correction_ru.ts" />
   </ItemGroup>
 </Project>

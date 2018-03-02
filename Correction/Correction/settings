@@ -1,0 +1,13 @@
+[General]
+grid_cols=33
+grid_rows=33
+cell_size_factor=0.5
+blur_image=5
+blur_mask=5
+max_pos_error=3
+peak_neigh_global=100
+peak_neigh_local=3
+threshold_enabled=false
+auto_threshold_enabled=false
+threshold_value=200
+smoothing_algorithm=0

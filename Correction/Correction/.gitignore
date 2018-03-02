@@ -4,3 +4,7 @@
 *.png
 *.txt
 *.dat
+/factor = 0.5/
+/factor = 1/
+/GeneratedFiles__/
+/Release/

@@ -34,6 +34,11 @@ Controller::Controller(Model* model, GraphicsScene* scene)
 	});
 
 	connect(scene, &GraphicsScene::problemRectDeletedS, model, &Model::removeProblemRect);
+	connect(scene, &GraphicsScene::averageRectS, model, &Model::averageRect);
+	connect(model, &Model::updateImageS, this,  &Controller::updateImageBlocks); // &Controller::updateImage);
+	connect(scene, &GraphicsScene::findSingleNodeS, this, &Controller::findSingleNodeS);
+	connect(scene, &GraphicsScene::setBackgroundTemplateS, model, &Model::setBackgroundTemplate);
+	connect(scene, &GraphicsScene::pasteBackgroundTemplateS, model, &Model::pasteBackgroundTemplate);
 }
 
 Controller::~Controller()
@@ -59,7 +64,40 @@ void Controller::loadImage()
 	ImageDisplay imageDisplay;
 	createVisualImageBlocks(cvImage, imageDisplay);
 	scene_->addImageBlocks(imageDisplay);
-	//emit model_->updateVisualizationS();
+
+}
+
+void Controller::updateImage()
+{
+	scene_->deleteImageBlocks();
+	ImageDisplay imageDisplay;
+	createVisualImageBlocks(model_->getImage(), imageDisplay);
+	scene_->addImageBlocks(imageDisplay);
+}
+
+void Controller::updateImageBlocks()
+{
+	auto imageBlockRects = scene_->indexesBlocksToUpdate(scene_->getSelectionRect());
+	QVector<QRect> rectsToUpdate;
+	rectsToUpdate.reserve(imageBlockRects.size());
+	for (int i = 0; i < imageBlockRects.size(); i++)
+	{
+		rectsToUpdate.push_back(scene_->getImageBlockRect(imageBlockRects[i]));
+	}
+
+	std::vector<cv::Mat> imageBlocks;
+	model_->calculateBlocksToUpdate(rectsToUpdate, imageBlocks);
+
+	QVector<QImage> qimagesBlocks;
+	qimagesBlocks.reserve(imageBlocks.size());
+	for (int i = 0; i < imageBlocks.size(); i++)
+	{
+		cv::Mat m = imageBlocks[i];
+		QImage image = AlgorithmsImages::Mat2QImageGray(imageBlocks[i]);
+		qimagesBlocks.push_back(image);
+	}
+
+	scene_->updateImageBlocks(imageBlockRects, qimagesBlocks);
 }
 
 void Controller::createVisualImageBlocks(const cv::Mat& cvImage, ImageDisplay& imageDisplay)
@@ -69,53 +107,3 @@ void Controller::createVisualImageBlocks(const cv::Mat& cvImage, ImageDisplay& i
 	const int c_block_height = 2000;
 	AlgorithmsImages::createVisualImageBlocks(cvImage, c_block_width, c_block_height, imageDisplay);
 }
-
-//void Controller::doOperation(const Operation& operation)
-//{
-//	switch (operation)
-//	{
-//
-//	case OPERATION_FIND_NODES_APPROX:
-//		findNodesApproximately(rows_count, cols_count);
-//		break;
-//
-//	case OPERATION_FIND_NODES_ACCURATE:
-//		assert(operationParameters.size() == 5);
-//		if (operationParameters.size() != 5)
-//		{
-//			return;
-//		}
-//		rows_count = operationParameters[0].toInt();
-//		cols_count = operationParameters[1].toInt();
-//		cell_size_factor = operationParameters[2].toDouble();
-//		blurImage = operationParameters[3].toInt();
-//		blurMask = operationParameters[4].toInt();
-//		findNodesAccurately(rows_count, cols_count, cell_size_factor, blurImage, blurMask);
-//		break;
-//	case OPERATION_FIND_SINGLE_NODE_ACCURATE:
-//		assert(operationParameters.size() == 3);
-//		if (operationParameters.size() != 3)
-//		{
-//			return;
-//		}
-//		cell_size_factor = operationParameters[0].toDouble();
-//		blurImage = operationParameters[1].toInt();
-//		blurMask = operationParameters[2].toInt();
-//		findSingleNodeAccurately(-1, -1, cell_size_factor, blurImage, blurMask, true);
-//		break;
-//
-//	case OPERATION_WRITE_CORRECTION_TABLE:
-//		assert(operationParameters.size() == 1);
-//		if (operationParameters.size() != 1)
-//		{
-//			return;
-//		}
-//		iteration = operationParameters[0].toInt();
-//
-//		calculateCorrectionTable(iteration);
-//		break;
-//
-//	default:
-//		break;
-//	}
-//}

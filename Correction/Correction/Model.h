@@ -26,7 +26,10 @@ public:
 	explicit Model(QObject* parent = 0);
 	~Model();
 	void setImage(const cv::Mat& cvImage);
+	const cv::Mat& getImage();
+	//std::vector<const cv::Mat&> getImageBlocks(const std::vector<int>& indexesOfBlocks);
 
+	void calculateBlocksToUpdate(const QVector<QRect>& imageBlockRects, std::vector<cv::Mat>& imageBlocks) const;
 	/*
 	Algorithm to find approximate positions of nodes.
 	rows, cols - number of rows and columns in the grid,
@@ -107,12 +110,28 @@ public:
 
 	bool nodeInsideOneOfRects(const cv::Point& node, int& indexOfRect);
 
+	void averageRect(const QRect& rect);
+
+	void setBackgroundTemplate(const QRect& rect);
+
+	void pasteBackgroundTemplate(const QRect& rect);
+
 signals:
 	void updateVisualizationS();
 	void sendProgressS(int progressInPercents);
 	void operationfinishedS();
+	void updateImageS();
 
 private:
+
+	/*utility functions:*/
+	void calculateLineThickness(const cv::Mat& cvMat, int sumDirection, bool slopeNeeded, double angle, int& thickness);
+	void thresholdImage(const cv::Mat& src, cv::Mat& dst);
+	void blurImage(const cv::Mat& src, cv::Mat& dst, int blurSize, int smoothingAlgorithm);
+	int getBlurImageSize();
+	int getPeakNeighborhoodLocal();
+
+	
 	/*
 	First step of calculation of approximate node positions. 
 	cvImage - initial big image,
@@ -136,6 +155,7 @@ private:
 private:
 	
 	cv::Mat cvImage_; // big image to find nodes 
+	cv::Mat cvBackgroundTemplate_;
 	NodesSet nodesSet_; // object contains nodes positions
 	NodesSet nodesSetBase_; // object contains nodes approximate nodes positions
 	std::vector<cv::Rect> problemRects_; // rectangles that shows "problem" nodes positions

@@ -2,7 +2,6 @@
 
 //algorithms params:
 const int c_neighborhood(300);
-
 struct Parameters
 {
 	int gridRows;
@@ -11,8 +10,8 @@ struct Parameters
 
 	int smoothingAlgorithm;
 
-	int blurImage;
-	int blurMask;
+	int blurImageSize;
+	int blurMaskSize;
 	int maxPosError; // how much "approximate" node position can be different from "precise" (in percents).   
 
 	bool thresholdEnabled;
@@ -28,3 +27,4 @@ enum SmoothingAlgorithm
 	SMOOTHING_GAUSS = 0,
 	SMOOTHING_MEDIAN = 1
 };
+
